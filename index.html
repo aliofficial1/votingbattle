@@ -146,24 +146,26 @@
         }
 
         .match-item {
-            padding: 12px;
+            padding: 14px;
             background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
+            border: 1.5px solid #6366f1;
+            border-radius: 12px;
             margin-bottom: 12px;
             font-size: 13px;
+            text-align: left;
         }
 
         .match-info {
-            color: #374151;
-            font-weight: 600;
-            margin-bottom: 4px;
+            color: #111827;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 6px;
             display: block;
             word-break: break-all;
         }
 
         .match-timer {
-            font-size: 12px;
+            font-size: 13px;
             color: #dc2626;
             font-weight: 700;
             margin-bottom: 8px;
@@ -435,13 +437,12 @@
         </div>
         <div class="header-btns">
             <button class="account-btn" onclick="openSupportModal()" style="background-color: #059669;">Support</button>
-            <!-- Button is hidden initially until auth check completes -->
             <button class="account-btn" id="mainAccountBtn" onclick="handleHeaderBtnClick()" style="visibility: hidden;">Account</button>
         </div>
     </header>
 
     <main>
-        <!-- Section 1: Start Match with Entry Price & Required Player Name -->
+        <!-- Section 1: Start Match -->
         <div class="card">
             <h2>Start Match</h2>
             <div class="match-details">
@@ -468,6 +469,16 @@
             <div id="searchStatus" class="status-msg"></div>
         </div>
 
+        <!-- 🎯 Waiting Lobby Card (Start Match ke bilkul neeche) -->
+        <div class="matches-section" id="matchLobbyCard">
+            <h3>Match Lobby & Status</h3>
+            <div id="matchLobbyList">
+                <div class="match-item">
+                    <span class="match-info">No match waiting.</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Section 2: Search Match & Cast Vote -->
         <div class="card">
             <h2>Search Match by Link</h2>
@@ -479,16 +490,6 @@
                 </div>
             </div>
             <div id="searchedMatchResult"></div>
-        </div>
-
-        <!-- Match Lobby Section (Shows when user searches or waits) -->
-        <div class="matches-section" id="matchLobbyCard">
-            <h3>Match Lobby</h3>
-            <div id="matchLobbyList">
-                <div class="match-item">
-                    <span class="match-info">No lobby active.</span>
-                </div>
-            </div>
         </div>
 
         <!-- Active Started Matches Section -->
@@ -511,7 +512,7 @@
         </div>
     </main>
 
-    <!-- Support Modal (Live In-App Chat) -->
+    <!-- Support Modal -->
     <div class="modal-overlay" id="supportModal">
         <div class="modal">
             <div class="modal-header">
@@ -528,7 +529,7 @@
         </div>
     </div>
 
-    <!-- Auth Modal (Sign Up / Login) -->
+    <!-- Auth Modal -->
     <div class="modal-overlay" id="authModal">
         <div class="modal">
             <div class="modal-header">
@@ -582,7 +583,7 @@
 
             <div class="tab-buttons">
                 <button class="tab-btn active" id="btnTabDeposit" onclick="switchTab('deposit')">Deposit</button>
-                <button class="tab-btn" id="btnTabWithdraw" onclick="switchTab('withdraw')">Withdraw</button>
+                      <button class="tab-btn" id="btnTabWithdraw" onclick="switchTab('withdraw')">Withdraw</button>
                 <button class="tab-btn" id="btnTabStatus" onclick="switchTab('status')">Status</button>
                 <button class="tab-btn" id="btnTabMatches" onclick="switchTab('matches')">Match History</button>
             </div>
@@ -601,7 +602,7 @@
                         Send Rs. 50+ to EasyPaisa: <strong>03001234567</strong> (Ali Raza)
                     </div>
 
-                     <input type="number" id="depositAmount" placeholder="Amount (PKR / USD equivalent)">
+                    <input type="number" id="depositAmount" placeholder="Amount (PKR / USD equivalent)">
                     <input type="text" id="trxId" placeholder="TRX ID / Transaction Hash">
                     <input type="text" id="senderNumber" placeholder="Sender Mobile Number">
                     
@@ -699,7 +700,7 @@
         let currentUserId = null;
         let currentUserName = localStorage.getItem("cached_username") || "User";
         let matchesUnsubscribe = null;
-        let matchRequestsUnsubscribe = null;
+        let requestsUnsubscribe = null;
         let matchTimersInterval = null;
         let chatUnsubscribe = null;
 
@@ -738,7 +739,7 @@
 
         auth.onAuthStateChanged((user) => {
             let mainBtn = document.getElementById("mainAccountBtn");
-            mainBtn.style.visibility = "visible"; // Show button after verifying state
+            mainBtn.style.visibility = "visible";
 
             if (user) {
                 currentUserId = user.uid;
@@ -811,6 +812,7 @@
                 document.getElementById("matchLobbyCard").style.display = "none";
                 document.getElementById("activeMatchesCard").style.display = "none";
                 if (matchesUnsubscribe) matchesUnsubscribe();
+                if (requestsUnsubscribe) requestsUnsubscribe();
                 if (matchTimersInterval) clearInterval(matchTimersInterval);
 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -821,7 +823,7 @@
             }
         });
 
-        function checkPendingRequestLocks() {
+function checkPendingRequestLocks() {
             if (!currentUserId) return;
 
             db.collection("deposit_requests")
@@ -872,7 +874,7 @@
             if (chatUnsubscribe) chatUnsubscribe();
         }
 
-function loadUserChatMessages() {
+        function loadUserChatMessages() {
             if (!currentUserId) return;
             chatUnsubscribe = db.collection("support_chats")
                 .doc(currentUserId)
@@ -1005,6 +1007,7 @@ function loadUserChatMessages() {
                     alert("Login Error: " + error.message);
                 });
         }
+
 
         function handleForgotPassword() {
             let email = document.getElementById("loginEmail").value.trim();
@@ -1144,7 +1147,7 @@ function loadUserChatMessages() {
             });
         }
 
-        function loadUserHistory() {
+function loadUserHistory() {
             if (!currentUserId) return;
             
             db.collection("deposit_requests")
@@ -1242,7 +1245,7 @@ function loadUserChatMessages() {
             }
         }
 
-function toggleShowMore(type) {
+        function toggleShowMore(type) {
             if (type === 'deposit') {
                 showAllDeposits = !showAllDeposits;
                 renderDepositsList();
@@ -1323,6 +1326,26 @@ function toggleShowMore(type) {
             if (!currentUserId) return;
             if (matchTimersInterval) clearInterval(matchTimersInterval);
 
+            // 1. Listen for user waiting request in match_requests
+            requestsUnsubscribe = db.collection("match_requests")
+                .where("creator_id", "==", currentUserId)
+                .where("status", "==", "waiting")
+                .onSnapshot((snapshot) => {
+                    if (!snapshot.empty) {
+                        let reqData = snapshot.docs[0].data();
+                        let lobbyCard = document.getElementById("matchLobbyCard");
+                        lobbyCard.style.display = "block";
+                        
+                        document.getElementById("matchLobbyList").innerHTML = `
+                            <div class="match-item">
+                                <span class="match-info">${reqData.creator_name} VS Waiting...</span>
+                                <div style="color: #d97706; font-weight: 600; font-size: 12px;">Searching for an opponent (Entry: Rs. ${reqData.entry_fee})...</div>
+                            </div>
+                        `;
+                    }
+                });
+
+            // 2. Listen for pending_join and live matches
             matchesUnsubscribe = db.collection("active_matches")
                 .onSnapshot((snapshot) => {
                     let liveHtml = "";
@@ -1334,9 +1357,10 @@ function toggleShowMore(type) {
                         let data = doc.data();
                         if (data.player1_id === currentUserId || data.player2_id === currentUserId) {
                             
+                            // 20 Minutes Join Confirmation Timer
                             if (data.status === "pending_join") {
                                 let createdAt = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
-                                let expiryTime = createdAt + (15 * 60 * 1000);
+                                let expiryTime = createdAt + (20 * 60 * 1000); // 20 minutes
                                 let timeLeft = expiryTime - Date.now();
 
                                 if (timeLeft <= 0) {
@@ -1355,11 +1379,11 @@ function toggleShowMore(type) {
 
                                 lobbyHtml += `
                                     <div class="match-item" id="lobby_item_${doc.id}" data-id="${doc.id}" data-expiry="${expiryTime}">
-                                        <span class="match-info">Lobby: ${p1Name} vs ${p2Name}</span>
+                                        <span class="match-info">${p1Name} VS ${p2Name}</span>
                                         <span class="match-timer">Time to Join: ${mins}m ${secs}s</span>
                                         ${hasConfirmed 
-                                            ? '<div style="color: #059669; font-weight: bold; margin-top: 6px;">Joined! Waiting for opponent...</div>'
-                                            : `<button class="btn btn-match" style="padding: 8px; font-size: 13px; margin-top: 6px;" onclick="confirmJoinMatch('${doc.id}')">Join Match (Confirm)</button>`
+                                            ? '<div style="color: #059669; font-weight: bold; margin-top: 6px;">Joined! Waiting for opponent to tap Join Match...</div>'
+                                            : `<button class="btn btn-match" style="padding: 10px; font-size: 13px; margin-top: 6px;" onclick="confirmJoinMatch('${doc.id}')">Join Match</button>`
                                         }
                                     </div>
                                 `;
@@ -1406,11 +1430,11 @@ function toggleShowMore(type) {
                         }
                     });
 
-                    let lobbyCard = document.getElementById("matchLobbyCard");
+let lobbyCard = document.getElementById("matchLobbyCard");
                     if (foundLobby) {
                         lobbyCard.style.display = "block";
                         document.getElementById("matchLobbyList").innerHTML = lobbyHtml;
-                    } else {
+                    } else if (!foundLobby && document.querySelectorAll("#matchLobbyList .match-item").length === 0) {
                         lobbyCard.style.display = "none";
                     }
 
@@ -1423,11 +1447,13 @@ function toggleShowMore(type) {
                     }
                 });
 
+            // 1-second interval timer for 20m confirmation countdown
             matchTimersInterval = setInterval(() => {
                 let lobbyItems = document.querySelectorAll("#matchLobbyList .match-item");
                 lobbyItems.forEach((item) => {
                     let expiryTime = Number(item.getAttribute("data-expiry"));
-                    let matchId = item.getAttribute("data-id");
+                    if (!expiryTime) return;
+
                     let timeLeft = expiryTime - Date.now();
                     let timerEl = item.querySelector(".match-timer");
 
@@ -1444,6 +1470,8 @@ function toggleShowMore(type) {
                 matchItems.forEach((item) => {
                     let expiryTime = Number(item.getAttribute("data-expiry"));
                     let matchId = item.getAttribute("data-id");
+                    if (!expiryTime) return;
+
                     let timeLeft = expiryTime - Date.now();
                     let timerEl = item.querySelector(".match-timer");
 
@@ -1451,9 +1479,6 @@ function toggleShowMore(type) {
                         item.remove();
                         if (matchId) {
                             db.collection("active_matches").doc(matchId).update({ status: "ended" });
-                        }
-                        if (document.querySelectorAll("#startedMatchesList .match-item").length === 0) {
-                            document.getElementById("activeMatchesCard").style.display = "none";
                         }
                     } else if (timerEl) {
                         let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -1464,7 +1489,8 @@ function toggleShowMore(type) {
                 });
             }, 1000);
         }
-async function confirmJoinMatch(matchId) {
+
+        async function confirmJoinMatch(matchId) {
             let matchRef = db.collection("active_matches").doc(matchId);
             db.runTransaction(async (transaction) => {
                 let doc = await transaction.get(matchRef);
@@ -1695,7 +1721,7 @@ async function confirmJoinMatch(matchId) {
                     return;
                 }
 
-                let waitingQuery = await db.collection("match_requests")
+let waitingQuery = await db.collection("match_requests")
                     .where("entry_fee", "==", selectedFee)
                     .where("status", "==", "waiting")
                     .limit(1)
@@ -1724,7 +1750,7 @@ async function confirmJoinMatch(matchId) {
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     }).then(() => {
                         db.collection("match_requests").doc(reqDoc.id).delete();
-                        alert("Opponent found! Please check your lobby and tap 'Join Match' within 15 minutes.");
+                        alert("Opponent found! Please check your lobby below and tap 'Join Match' within 20 minutes.");
                         loadWalletBalance();
                     });
 
@@ -1738,7 +1764,7 @@ async function confirmJoinMatch(matchId) {
                         status: "waiting",
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     }).then(() => {
-                        document.getElementById("searchStatus").innerText = "Match created! Waiting for an opponent to join...";
+                        document.getElementById("searchStatus").innerText = "Match created! Waiting for an opponent...";
                         loadWalletBalance();
                     });
                 }
