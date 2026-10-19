@@ -403,7 +403,7 @@
             color: #1f2937;
             align-self: flex-start;
             border-bottom-left-radius: 2px;
-            border: 1px solid #e5e7eb;
+            border: 1.5px solid #e5e7eb;
         }
 
         .badge-pending { color: #d97706; font-weight: 700; }
@@ -469,7 +469,7 @@
             <div id="searchStatus" class="status-msg"></div>
         </div>
 
-        <!-- 🎯 Waiting Lobby Card (Start Match ke bilkul neeche) -->
+        <!-- 🎯 Waiting Lobby Card -->
         <div class="matches-section" id="matchLobbyCard">
             <h3>Match Lobby & Status</h3>
             <div id="matchLobbyList">
@@ -583,7 +583,7 @@
 
             <div class="tab-buttons">
                 <button class="tab-btn active" id="btnTabDeposit" onclick="switchTab('deposit')">Deposit</button>
-                      <button class="tab-btn" id="btnTabWithdraw" onclick="switchTab('withdraw')">Withdraw</button>
+                <button class="tab-btn" id="btnTabWithdraw" onclick="switchTab('withdraw')">Withdraw</button>
                 <button class="tab-btn" id="btnTabStatus" onclick="switchTab('status')">Status</button>
                 <button class="tab-btn" id="btnTabMatches" onclick="switchTab('matches')">Match History</button>
             </div>
@@ -1008,7 +1008,6 @@ function checkPendingRequestLocks() {
                 });
         }
 
-
         function handleForgotPassword() {
             let email = document.getElementById("loginEmail").value.trim();
             if (!email) {
@@ -1109,7 +1108,7 @@ function checkPendingRequestLocks() {
             }
         }
 
-        function updateDepositInfo() {
+function updateDepositInfo() {
             let method = document.getElementById("depositMethod").value;
             let infoBox = document.getElementById("depositInfoText");
             let senderInput = document.getElementById("senderNumber");
@@ -1147,7 +1146,7 @@ function checkPendingRequestLocks() {
             });
         }
 
-function loadUserHistory() {
+        function loadUserHistory() {
             if (!currentUserId) return;
             
             db.collection("deposit_requests")
@@ -1414,12 +1413,12 @@ function loadUserHistory() {
                                         <span class="match-timer" id="timer_${doc.id}">${timerText}</span>
                                         
                                         <div class="vote-row">
-                                            <span>${p1Name} (${p1Votes} Votes)</span>
+                                            <span id="p1_text_${doc.id}">${p1Name} (<span id="p1_votes_${doc.id}">${p1Votes}</span> Votes)</span>
                                             <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 1)">Vote A</button>
                                         </div>
 
                                         <div class="vote-row">
-                                            <span>${p2Name} (${p2Votes} Votes)</span>
+                                            <span id="p2_text_${doc.id}">${p2Name} (<span id="p2_votes_${doc.id}">${p2Votes}</span> Votes)</span>
                                             <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 2)">Vote B</button>
                                         </div>
 
@@ -1430,7 +1429,7 @@ function loadUserHistory() {
                         }
                     });
 
-let lobbyCard = document.getElementById("matchLobbyCard");
+                    let lobbyCard = document.getElementById("matchLobbyCard");
                     if (foundLobby) {
                         lobbyCard.style.display = "block";
                         document.getElementById("matchLobbyList").innerHTML = lobbyHtml;
@@ -1582,12 +1581,12 @@ let lobbyCard = document.getElementById("matchLobbyCard");
                         <span class="match-info">Live Battle: ${p1Name} vs ${p2Name}</span>
                         
                         <div class="vote-row">
-                            <span>${p1Name} (${p1Votes} Votes)</span>
+                            <span>${p1Name} (<span id="search_p1_votes_${doc.id}">${p1Votes}</span> Votes)</span>
                             <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 1)">Vote A</button>
                         </div>
 
                         <div class="vote-row">
-                            <span>${p2Name} (${p2Votes} Votes)</span>
+                            <span>${p2Name} (<span id="search_p2_votes_${doc.id}">${p2Votes}</span> Votes)</span>
                             <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 2)">Vote B</button>
                         </div>
                     </div>
@@ -1609,6 +1608,22 @@ let lobbyCard = document.getElementById("matchLobbyCard");
                 return;
             }
 
+            // ⚡ Instant UI Update (Optimistic Update) - Bina delay ke foran screen update karein
+            let p1Span = document.getElementById("p1_votes_" + matchId);
+            let p2Span = document.getElementById("p2_votes_" + matchId);
+            let searchP1Span = document.getElementById("search_p1_votes_" + matchId);
+            let searchP2Span = document.getElementById("search_p2_votes_" + matchId);
+
+            if (playerNum === 1) {
+                if (p1Span) p1Span.innerText = Number(p1Span.innerText) + 1;
+                if (searchP1Span) searchP1Span.innerText = Number(searchP1Span.innerText) + 1;
+            } else {
+                if (p2Span) p2Span.innerText = Number(p2Span.innerText) + 1;
+                if (searchP2Span) searchP2Span.innerText = Number(searchP2Span.innerText) + 1;
+            }
+
+            localStorage.setItem("voted_" + matchId, "true");
+
             let matchRef = db.collection("active_matches").doc(matchId);
             
             db.runTransaction((transaction) => {
@@ -1617,7 +1632,6 @@ let lobbyCard = document.getElementById("matchLobbyCard");
                     
                     let data = doc.data();
                     if (data.status !== "live") {
-                        alert("Match is not live!");
                         return;
                     }
 
@@ -1628,17 +1642,11 @@ let lobbyCard = document.getElementById("matchLobbyCard");
                         let newVotes = (data.player2_votes || 0) + 1;
                         transaction.update(matchRef, { player2_votes: newVotes });
                     }
-
-                    localStorage.setItem("voted_" + matchId, "true");
                 });
             }).then(() => {
-                alert("Your vote has been recorded successfully!");
-                if(document.getElementById("matchSearchInput").value) {
-                    searchMatchByLink();
-                }
+                // Background update successful
             }).catch((err) => {
                 console.error(err);
-                alert("Error submitting vote.");
             });
         }
 
@@ -1721,7 +1729,7 @@ let lobbyCard = document.getElementById("matchLobbyCard");
                     return;
                 }
 
-let waitingQuery = await db.collection("match_requests")
+                let waitingQuery = await db.collection("match_requests")
                     .where("entry_fee", "==", selectedFee)
                     .where("status", "==", "waiting")
                     .limit(1)
