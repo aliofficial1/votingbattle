@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>votingBattle - Admin Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding-bottom: 40px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        main {
+            max-width: 650px;
+            margin: 20px auto;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            border-bottom: 1.5px solid #f1f5f9;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .item-box div {
+            margin-bottom: 4px;
+        }
+
+        .btn {
+            padding: 9px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            margin-top: 6px;
+            margin-right: 6px;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-approve { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-reject { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-search { background: linear-gradient(135deg, #6366f1, #4f46e5); width: auto; padding: 10px 16px; margin-top: 0; }
+        .btn-select { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-bot { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+        .admin-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .admin-tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: white;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            color: #64748b;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .admin-tab-btn.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .admin-section {
+            display: none;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #6366f1;
+        }
+
+        .badge-active { color: #10b981; font-weight: 700; }
+        .badge-suspended { color: #ef4444; font-weight: 700; }
+
+        .selection-banner {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #1e40af;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-box {
+            max-height: 250px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 4px;
+        }
+
+        .chat-msg {
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+
+        .chat-user {
+            background: #f1f5f9;
+            color: #0f172a;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chat-admin {
+            background: #e0e7ff;
+            color: #3730a3;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>votingBattle - Admin Control Panel</h1>
+        <a href="index.html" class="back-btn">Go to App</a>
+    </header>
+
+    <main>
+        <!-- Admin Main Navigation Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab-btn active" id="tabBtnDeposit" onclick="switchAdminTab('deposit')">💰 Deposits</button>
+            <button class="admin-tab-btn" id="tabBtnWithdraw" onclick="switchAdminTab('withdraw')">🏦 Withdraws</button>
+        </div>
+
+        <!-- 🤖 1. Create Bot Account & Start Match Section -->
+        <div class="card" style="border-color: #8b5cf6; background: #faf5ff;">
+            <h2>🤖 Create Bot Account & Start Match</h2>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Set up Bot details and select any waiting user from line to start match instantly!</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 12px; font-weight: 600; color: #475569;">1. Select Entry Price:</label>
+                <select id="botEntryFee" onchange="filterWaitingUsersForBot()">
+                    <option value="50">Rs. 50 Match</option>
+                    <option value="100">Rs. 100 Match</option>
+                </select>
+
+                <label style="font-size: 12px; font-weight: 600; color: #475569;">2. Enter Bot Player Name:</label>
+                <input type="text" id="botNameInput" placeholder="Enter custom Bot Name (e.g. ProGamer, WinnerX)...">
+
+                <label style="font-size: 12px; font-weight: 600; color: #475569;">3. Select Real User from Waiting Line:</label>
+                <select id="botUserSelect">
+                    <option value="" disabled selected>-- Loading waiting users --</option>
+                </select>
+
+                <button onclick="startBotMatchWithUser()" class="btn btn-bot" style="margin-top: 6px; padding: 12px;">
+                    Start Match With Bot 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- 🕹️ 2. Active Bot Matches Managed by Admin -->
+        <div class="card" style="border-color: #10b981;">
+            <h2>🕹️ Live Bot Matches (Admin Voting Control)</h2>
+            <div id="adminBotMatchesList">
+                <div class="item-box">Loading bot matches...</div>
+            </div>
+        </div>
+
+        <!-- Support Chats Inbox Section -->
+        <div class="card" style="border-color: #6366f1;">
+            <h2>💬 Live Support Messages Inbox</h2>
+            <div id="adminSupportList">
+                <div class="item-box">Loading support chats...</div>
+            </div>
+        </div>
+
+        <!-- Active Chat Modal Inside Admin -->
+        <div class="modal-overlay" id="adminChatModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 100; padding: 16px;">
+            <div class="modal" style="background: white; width: 100%; max-width: 440px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                    <h3 id="chatModalTitle" style="font-size: 16px;">Chat with User</h3>
+                    <button onclick="closeAdminChatModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+                </div>
+                <div class="chat-box" id="adminChatBox"></div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                    <textarea id="adminReplyMessage" rows="2" placeholder="Type reply as admin..."></textarea>
+                    <button onclick="sendAdminReply()" class="btn btn-approve" style="margin: 0; padding: 10px;">Send Reply</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Search & Manage User by 8-Digit Player ID -->
+        <div class="card">
+            <h2>🔍 Search User Account</h2>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <input type="text" id="searchPlayerId" placeholder="Enter 8-digit Player ID...">
+                <button onclick="searchUserById()" class="btn btn-search">Search</button>
+            </div>
+            <div id="userSearchResult" style="margin-top: 12px;"></div>
+        </div>
+
+        <!-- 4. Suspended Accounts List Section -->
+        <div class="card" style="border-color: #fca5a5;">
+            <h2>🚫 Suspended Accounts List</h2>
+            <div id="suspendedUsersList">
+                <div class="item-box">Loading suspended accounts...</div>
+            </div>
+        </div>
+
+        <!-- 5. Deposit Requests Section -->
+        <div class="card admin-section active" id="depositSection">
+            <h2>Pending Deposit Requests</h2>
+            <div id="depositRequestsList">
+                <div class="item-box">Loading deposits...</div>
+            </div>
+        </div>
+
+        <!-- 6. Withdrawal Requests Section -->
+        <div class="card admin-section" id="withdrawSection">
+            <h2>Pending Withdrawal Requests</h2>
+            <div id="withdrawRequestsList">
+                <div class="item-box">Loading withdrawals...</div>
+            </div>
+        </div>
+
+        <!-- Selection Status Banner for Manual Matching -->
+        <div class="selection-banner" id="matchSelectionBanner">
+            <div><strong>Selected Player 1:</strong> <span id="selectedP1Name">None</span></div>
+            <button onclick="cancelSelection()" style="background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer;">Cancel</button>
+        </div>
+
+        <!-- 7. Rs. 50 Match Requests Pool (Select & Pair) -->
+        <div class="card">
+            <h2>Rs. 50 Match Requests (Waiting Line)</h2>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">Click 'Select as Player 1' on first user, then click 'Pair & Start Match' on second user!</p>
+            <div id="matchRequests50">
+                <div class="item-box">Loading Rs. 50 requests...</div>
+            </div>
+        </div>
+
+        <!-- 8. Rs. 100 Match Requests Pool (Select & Pair) -->
+        <div class="card">
+            <h2>Rs. 100 Match Requests (Waiting Line)</h2>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">Click 'Select as Player 1' on first user, then click 'Pair & Start Match' on second user!</p>
+            <div id="matchRequests100">
+                <div class="item-box">Loading Rs. 100 requests...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGu1r9uSKymwTH_5nQIwW8qKC9TYCrPow",
+            authDomain: "votingbattle.firebaseapp.com",
+            databaseURL: "https://votingbattle-default-rtdb.firebaseio.com",
+            projectId: "votingbattle",
+            storageBucket: "votingbattle.firebasestorage.app",
+            messagingSenderId: "572901936550",
+            appId: "1:572901936550:web:a3918de85c585d51975367"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let selectedPlayer1 = null;
+        let activeChatUserId = null;
+        let adminChatUnsubscribe = null;
+        let allWaitingRequests = [];
+
+        window.onload = function() {
+            loadMatchRequests();
+            loadDepositRequests();
+            loadWithdrawRequests();
+            loadSuspendedUsers();
+            loadAdminSupportInbox();
+            loadAdminSupportInbox();
+            loadAdminBotMatches();
+            listenForWaitingUsers();
+        };
+
+        function switchAdminTab(tabName) {
+            let depBtn = document.getElementById("tabBtnDeposit");
+            let witBtn = document.getElementById("tabBtnWithdraw");
+            let depSec = document.getElementById("depositSection");
+            let witSec = document.getElementById("withdrawSection");
+
+            if (tabName === 'deposit') {
+                depBtn.classList.add("active");
+                witBtn.classList.remove("active");
+                depSec.classList.add("active");
+                witSec.classList.remove("active");
+            } else {
+                witBtn.classList.add("active");
+                depBtn.classList.remove("active");
+                witSec.classList.add("active");
+                depSec.classList.remove("active");
+            }
+        }
+
+        function listenForWaitingUsers() {
+            db.collection("match_requests")
+                .where("status", "==", "waiting")
+                .onSnapshot((snapshot) => {
+                    allWaitingRequests = [];
+                    snapshot.forEach((doc) => {
+                        allWaitingRequests.push({ id: doc.id, ...doc.data() });
+                    });
+                    filterWaitingUsersForBot();
+                });
+        }
+
+        function filterWaitingUsersForBot() {
+            let selectedFee = Number(document.getElementById("botEntryFee").value);
+            let selectEl = document.getElementById("botUserSelect");
+
+            let filtered = allWaitingRequests.filter(r => Number(r.entry_fee) === selectedFee);
+
+            if (filtered.length === 0) {
+                selectEl.innerHTML = `<option value="" disabled selected>No user waiting for Rs. ${selectedFee} match</option>`;
+                return;
+            }
+
+            let html = '<option value="" disabled selected>-- Select a user from waiting line --</option>';
+            filtered.forEach((req) => {
+                html += `<option value="${req.id}|${req.creator_id}|${req.creator_name}">${req.creator_name} (Rs. ${req.entry_fee})</option>`;
+            });
+            selectEl.innerHTML = html;
+        }
+
+        function startBotMatchWithUser() {
+            let selectEl = document.getElementById("botUserSelect");
+            let selectedVal = selectEl.value;
+            let botName = document.getElementById("botNameInput").value.trim();
+            let entryFee = Number(document.getElementById("botEntryFee").value);
+
+            if (!botName) {
+                alert("Please enter Bot Name!");
+                return;
+            }
+
+            if (!selectedVal) {
+                alert("Please select a waiting user from the line!");
+                return;
+            }
+
+            let parts = selectedVal.split("|");
+            let reqId = parts[0];
+            let userId = parts[1];
+            let userName = parts[2];
+
+            let randomBotId = "BOT_" + Math.floor(10000000 + Math.random() * 90000000);
+
+            // Create live match in active_matches collection
+            db.collection("active_matches").add({
+                player1_id: userId,
+                player1_name: userName,
+                player1_votes: 0,
+                player2_id: randomBotId,
+                player2_name: botName, // Bot name is stored clean so user doesn't know it's a bot
+                player2_votes: 0,
+                entry_fee: entryFee,
+                status: "live",
+                is_bot_match: true,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                db.collection("match_requests").doc(reqId).delete();
+                document.getElementById("botNameInput").value = "";
+                alert("Bot Match started successfully! " + userName + " vs " + botName);
+            }).catch((err) => {
+                alert("Error starting bot match: " + err);
+            });
+        }
+
+        function loadAdminBotMatches() {
+            db.collection("active_matches")
+                .where("status", "==", "live")
+                .onSnapshot((snapshot) => {
+                    let html = "";
+                    let count = 0;
+
+                    snapshot.forEach((doc) => {
+                        let m = doc.data();
+                        if (m.is_bot_match) {
+                            count++;
+                            html += `
+                                <div class="item-box" style="border-left: 4px solid #10b981;">
+                                    <div><strong>Match:</strong> ${m.player1_name} vs ${m.player2_name} (Bot)</div>
+                                    <div><strong>Entry Fee:</strong> Rs. ${m.entry_fee}</div>
+                                    <div style="margin: 6px 0; background: #f1f5f9; padding: 8px; border-radius: 8px;">
+                                        <div><strong>Current Votes:</strong> ${m.player1_name} (${m.player1_votes || 0}) - ${m.player2_name} (${m.player2_votes || 0})</div>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button onclick="adminAddVote('${doc.id}', 'p1')" class="btn btn-select">+ Vote ${m.player1_name}</button>
+                                        <button onclick="adminAddVote('${doc.id}', 'p2')" class="btn btn-approve">+ Vote ${m.player2_name} (Bot)</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    document.getElementById("adminBotMatchesList").innerHTML = count > 0 ? html : '<div class="item-box">No active bot matches right now.</div>';
+                });
+        }
+
+        function adminAddVote(matchId, playerKey) {
+            let matchRef = db.collection("active_matches").doc(matchId);
+            db.runTransaction((transaction) => {
+                return transaction.get(matchRef).then((doc) => {
+                    if (!doc.exists) throw "Match not found!";
+                    let data = doc.data();
+                    if (playerKey === 'p1') {
+                        let newVotes = (data.player1_votes || 0) + 1;
+                        transaction.update(matchRef, { player1_votes: newVotes });
+                    } else {
+                        let newVotes = (data.player2_votes || 0) + 1;
+                        transaction.update(matchRef, { player2_votes: newVotes });
+                    }
+                });
+            }).then(() => {
+                // Vote updated live
+            }).catch((err) => {
+                alert("Error adding vote: " + err);
+            });
+        }
+
+        function loadAdminSupportInbox() {
+            db.collection("support_chats")
+                .orderBy("lastUpdated", "desc")
+                .onSnapshot((snapshot) => {
+                    let inboxEl = document.getElementById("adminSupportList");
+                    if (snapshot.empty) {
+                        inboxEl.innerHTML = '<div class="item-box">No support messages yet.</div>';
+                        return;
+                    }
+                    let html = "";
+                    snapshot.forEach((doc) => {
+                        let c = doc.data();
+                        let uId = doc.id;
+                        let dateStr = c.lastUpdated ? new Date(c.lastUpdated.toDate()).toLocaleTimeString() : "";
+
+                        html += `
+                            <div class="item-box" style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div><strong>User:</strong> ${c.userName || "User"} (ID: ${c.playerId || "N/A"})</div>
+                                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">"${c.lastMessage || ""}"</div>
+                                    <div style="color: #94a3b8; font-size: 10px; margin-top: 2px;">${dateStr}</div>
+                                </div>
+                                <button onclick="openAdminChat('${uId}', '${c.userName || "User"}')" class="btn btn-select" style="margin: 0; padding: 6px 10px;">Open Chat</button>
+                            </div>
+                        `;
+                    });
+                    inboxEl.innerHTML = html;
+                });
+        }
+
+        function openAdminChat(userId, userName) {
+            activeChatUserId = userId;
+            document.getElementById("chatModalTitle").innerText = "Chat with " + userName;
+            document.getElementById("adminChatModal").style.display = "flex";
+
+            adminChatUnsubscribe = db.collection("support_chats")
+                .doc(userId)
+                .collection("messages")
+                .orderBy("timestamp", "asc")
+                .onSnapshot((snapshot) => {
+                    let box = document.getElementById("adminChatBox");
+                    let html = "";
+                    snapshot.forEach((doc) => {
+                        let m = doc.data();
+                        let isUser = m.sender === "user";
+                        html += `
+                            <div class="chat-msg ${isUser ? 'chat-user' : 'chat-admin'}">
+                                <div>${m.text}</div>
+                            </div>
+                        `;
+                    });
+                    box.innerHTML = html;
+                    box.scrollTop = box.scrollHeight;
+                });
+        }
+
+        function closeAdminChatModal() {
+            document.getElementById("adminChatModal").style.display = "none";
+            if (adminChatUnsubscribe) adminChatUnsubscribe();
+            activeChatUserId = null;
+        }
+
+        function sendAdminReply() {
+            let text = document.getElementById("adminReplyMessage").value.trim();
+            if (!text || !activeChatUserId) return;
+
+            db.collection("support_chats")
+                .doc(activeChatUserId)
+                .collection("messages")
+                .add({
+                    sender: "admin",
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    return db.collection("support_chats").doc(activeChatUserId).set({
+                        lastMessage: "Admin: " + text,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }).then(() => {
+                    document.getElementById("adminReplyMessage").value = "";
+                }).catch((err) => {
+                    alert("Error replying: " + err);
+                });
+        }
+
+        function searchUserById() {
+            let searchId = document.getElementById("searchPlayerId").value.trim();
+            let resultDiv = document.getElementById("userSearchResult");
+
+            if (!searchId || searchId.length !== 8) {
+                alert("Please enter a valid 8-digit Player ID!");
+                return;
+            }
+
+            resultDiv.innerHTML = "Searching user database...";
+
+            db.collection("users").where("player_id", "==", searchId).get().then((snapshot) => {
+                if (snapshot.empty) {
+                    resultDiv.innerHTML = "<p style='color: #ef4444; font-size: 13px;'>No user found with this Player ID.</p>";
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    let u = doc.data();
+                    let uId = doc.id;
+                    let status = u.status || "active";
+
+                    resultDiv.innerHTML = `
+                        <div class="item-box" style="background: #fff; border-color: #6366f1;">
+                            <div><strong>Name:</strong> ${u.name || "N/A"}</div>
+                            <div><strong>Email:</strong> ${u.email || "N/A"}</div>
+                            <div><strong>Player ID:</strong> ${u.player_id}</div>
+                            <div><strong>Balance:</strong> Rs. ${u.balance || 0}</div>
+                            <div><strong>Status:</strong> <span class="${status === 'active' ? 'badge-active' : 'badge-suspended'}">${status.toUpperCase()}</span></div>
+                            <div style="margin-top: 8px;">
+                                ${status === 'active' 
+                                    ? `<button onclick="toggleUserStatus('${uId}', 'suspended')" class="btn btn-reject">Suspend Account</button>`
+                                    : `<button onclick="toggleUserStatus('${uId}', 'active')" class="btn btn-approve">Activate Account</button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                });
+            }).catch((err) => {
+                resultDiv.innerHTML = "<p style='color: #ef4444; font-size: 13px;'>Error searching user.</p>";
+            });
+        }
+function toggleUserStatus(userId, newStatus) {
+            db.collection("users").doc(userId).update({ status: newStatus }).then(() => {
+                alert("User status changed to " + newStatus.toUpperCase());
+                searchUserById();
+                loadSuspendedUsers();
+            });
+        }
+
+        function loadSuspendedUsers() {
+            db.collection("users")
+                .where("status", "==", "suspended")
+                .onSnapshot((snapshot) => {
+                    let html = "";
+                    if (snapshot.empty) {
+                        document.getElementById("suspendedUsersList").innerHTML = '<div class="item-box">No suspended accounts found.</div>';
+                        return;
+                    }
+
+                    snapshot.forEach((doc) => {
+                        let u = doc.data();
+                        let uId = doc.id;
+
+                        html += `
+                            <div class="item-box" style="background: #fef2f2; border-color: #fca5a5;">
+                                <div><strong>Name:</strong> ${u.name || "N/A"}</div>
+                                <div><strong>Email:</strong> ${u.email || "N/A"}</div>
+                                <div><strong>Player ID:</strong> ${u.player_id || "N/A"}</div>
+                                <div><strong>Balance:</strong> Rs. ${u.balance || 0}</div>
+                                <div style="margin-top: 8px;">
+                                    <button onclick="toggleUserStatus('${uId}', 'active')" class="btn btn-approve">Activate Account</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById("suspendedUsersList").innerHTML = html;
+                });
+        }
+
+        function loadMatchRequests() {
+            db.collection("match_requests")
+                .where("status", "==", "waiting")
+                .onSnapshot(async (snapshot) => {
+                    let html50 = "";
+                    let html100 = "";
+                    let count50 = 0;
+                    let count100 = 0;
+
+                    for (let reqDoc of snapshot.docs) {
+                        let reqId = reqDoc.id;
+                        let req = reqDoc.data();
+                        let creatorId = req.creator_id;
+                        let entryFee = Number(req.entry_fee);
+
+                        let stats = await calculateUserMatchStats(creatorId);
+
+                        let actionBtn = "";
+                        if (selectedPlayer1 && selectedPlayer1.id === reqId) {
+                            actionBtn = `<span style="color: #10b981; font-weight: bold; font-size: 12px;">[Selected as Player 1]</span>`;
+                        } else if (selectedPlayer1 && selectedPlayer1.entryFee === entryFee) {
+                            actionBtn = `<button onclick="pairAndStartMatch('${reqId}', '${req.creator_id}', '${req.creator_name}', ${entryFee})" class="btn btn-approve">Pair & Start Match</button>`;
+                        } else if (!selectedPlayer1) {
+                            actionBtn = `<button onclick="selectPlayer1('${reqId}', '${req.creator_id}', '${req.creator_name}', ${entryFee})" class="btn btn-select">Select as Player 1</button>`;
+                        } else {
+                            actionBtn = `<span style="color: #94a3b8; font-size: 11px;">(Different entry fee)</span>`;
+                        }
+
+                        let reqItemHtml = `
+                            <div class="item-box">
+                                <div><strong>Player Name:</strong> ${req.creator_name}</div>
+                                <div><strong>Entry Fee:</strong> Rs. ${entryFee}</div>
+                                <div style="margin-top: 6px; background: #f1f5f9; padding: 6px; border-radius: 6px; color: #334155;">
+                                    <div><strong>Stats:</strong> Wins: ${stats.wins} | Losses: ${stats.losses}</div>
+                                    <div><strong>Highest Votes:</strong> ${stats.highVotes} Votes</div>
+                                </div>
+                                <div style="margin-top: 8px;">
+                                    ${actionBtn}
+                                </div>
+                            </div>
+                        `;
+
+                        if (entryFee === 50) {
+                            html50 += reqItemHtml;
+                            count50++;
+                        } else {
+                            html100 += reqItemHtml;
+                            count100++;
+                        }
+                    }
+
+                    document.getElementById("matchRequests50").innerHTML = count50 > 0 ? html50 : '<div class="item-box">No Rs. 50 match requests waiting.</div>';
+                    document.getElementById("matchRequests100").innerHTML = count100 > 0 ? html100 : '<div class="item-box">No Rs. 100 match requests waiting.</div>';
+                });
+        }
+
+        function selectPlayer1(reqId, userId, userName, entryFee) {
+            selectedPlayer1 = { id: reqId, userId: userId, name: userName, entryFee: entryFee };
+            document.getElementById("selectedP1Name").innerText = userName + " (Rs. " + entryFee + ")";
+            document.getElementById("matchSelectionBanner").style.display = "flex";
+            loadMatchRequests();
+        }
+
+        function cancelSelection() {
+            selectedPlayer1 = null;
+            document.getElementById("matchSelectionBanner").style.display = "none";
+            loadMatchRequests();
+        }
+
+        function pairAndStartMatch(p2ReqId, p2UserId, p2Name, entryFee) {
+            if (!selectedPlayer1) return;
+
+            if (selectedPlayer1.userId === p2UserId) {
+                alert("A user cannot play against themselves!");
+                return;
+            }
+
+            db.collection("active_matches").add({
+                player1_id: selectedPlayer1.userId,
+                player1_name: selectedPlayer1.name,
+                player1_votes: 0,
+                player2_id: p2UserId,
+                player2_name: p2Name,
+                player2_votes: 0,
+                entry_fee: entryFee,
+                status: "live",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                let batch = db.batch();
+                batch.delete(db.collection("match_requests").doc(selectedPlayer1.id));
+                batch.delete(db.collection("match_requests").doc(p2ReqId));
+                return batch.commit();
+            }).then(() => {
+                alert("Match started successfully between " + selectedPlayer1.name + " and " + p2Name + "!");
+                selectedPlayer1 = null;
+                document.getElementById("matchSelectionBanner").style.display = "none";
+                loadMatchRequests();
+            }).catch((err) => {
+                alert("Error starting match: " + err);
+            });
+        }
+
+        async function calculateUserMatchStats(userId) {
+            let wins = 0;
+            let losses = 0;
+            let highVotes = 0;
+
+            try {
+                let matchesSnap = await db.collection("active_matches").get();
+                matchesSnap.forEach((doc) => {
+                    let m = doc.data();
+                    if (m.player1_id === userId || m.player2_id === userId) {
+                        let isP1 = m.player1_id === userId;
+                        let myVotes = isP1 ? (m.player1_votes || 0) : (m.player2_votes || 0);
+                        let oppVotes = isP1 ? (m.player2_votes || 0) : (m.player1_votes || 0);
+
+                        if (myVotes > highVotes) {
+                            highVotes = myVotes;
+                        }
+
+                        if (m.status !== "live") {
+                            if (myVotes > oppVotes) wins++;
+                            else if (oppVotes > myVotes) losses++;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error fetching stats:", e);
+            }
+
+            return { wins, losses, highVotes };
+        }
+
+        function loadDepositRequests() {
+            db.collection("deposit_requests")
+                .where("status", "==", "pending")
+                .onSnapshot(async (snapshot) => {
+                    let html = "";
+                    if (snapshot.empty) {
+                        document.getElementById("depositRequestsList").innerHTML = '<div class="item-box">No pending deposits.</div>';
+                        return;
+                    }
+
+                    for (let docSnap of snapshot.docs) {
+                        let d = docSnap.data();
+                        let dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : "Just now";
+
+                        let userDoc = await db.collection("users").doc(d.userId).get();
+                        let playerId = userDoc.exists ? (userDoc.data().player_id || "N/A") : "N/A";
+                        let userName = userDoc.exists ? (userDoc.data().name || "User") : "User";
+
+                        html += `
+                            <div class="item-box">
+                                <div><strong>User:</strong> ${userName} (Player ID: <span style="color:#6366f1; font-weight:bold;">${playerId}</span>)</div>
+                                <div><strong>Method:</strong> ${d.method} | <strong>Amount:</strong> Rs. ${d.amount}</div>
+                                <div><strong>TRX ID / Hash:</strong> ${d.trxId}</div>
+                                <div><strong>Sender Number:</strong> ${d.senderNumber || "N/A"}</div>
+                                <div><strong>Date:</strong> ${dateStr}</div>
+                                <div style="margin-top: 8px;">
+                                    <button onclick="approveDeposit('${docSnap.id}', '${d.userId}', ${d.amount})" class="btn btn-approve">Approve</button>
+                                    <button onclick="rejectDeposit('${docSnap.id}')" class="btn btn-reject">Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    document.getElementById("depositRequestsList").innerHTML = html;
+                });
+        }
+
+        function approveDeposit(reqId, userId, amount) {
+            let userRef = db.collection("users").doc(userId);
+            db.runTransaction((transaction) => {
+                return transaction.get(userRef).then((uDoc) => {
+                    if (!uDoc.exists) throw "User does not exist!";
+                    let newBalance = (uDoc.data().balance || 0) + amount;
+                    transaction.update(userRef, { balance: newBalance });
+                    transaction.update(db.collection("deposit_requests").doc(reqId), { status: "approved" });
+                });
+            }).then(() => {
+                alert("Deposit approved and balance added successfully!");
+            }).catch((err) => {
+                alert("Error approving deposit: " + err);
+            });
+        }
+
+        function rejectDeposit(reqId) {
+            db.collection("deposit_requests").doc(reqId).update({ status: "rejected" }).then(() => {
+                alert("Deposit request rejected.");
+            });
+        }
+
+        function loadWithdrawRequests() {
+            db.collection("withdrawal_requests")
+                .where("status", "==", "pending")
+                .onSnapshot(async (snapshot) => {
+                    let html = "";
+                    if (snapshot.empty) {
+                        document.getElementById("withdrawRequestsList").innerHTML = '<div class="item-box">No pending withdrawals.</div>';
+                        return;
+                    }
+
+                    for (let docSnap of snapshot.docs) {
+                        let w = docSnap.data();
+                        let dateStr = w.timestamp ? new Date(w.timestamp.toDate()).toLocaleString() : "Just now";
+
+                        let userDoc = await db.collection("users").doc(w.userId).get();
+                        let playerId = userDoc.exists ? (userDoc.data().player_id || "N/A") : "N/A";
+                        let userName = userDoc.exists ? (userDoc.data().name || "User") : "User";
+
+                        html += `
+                            <div class="item-box">
+                                <div><strong>User:</strong> ${userName} (Player ID: <span style="color:#6366f1; font-weight:bold;">${playerId}</span>)</div>
+                                <div><strong>Method:</strong> ${w.method} | <strong>Amount:</strong> Rs. ${w.amount}</div>
+                                <div><strong>Account Number / ID:</strong> ${w.accountNumber}</div>
+                                <div><strong>Account Title:</strong> ${w.accountTitle || "N/A"}</div>
+                                <div><strong>Date:</strong> ${dateStr}</div>
+                                <div style="margin-top: 8px;">
+                                    <button onclick="approveWithdrawal('${docSnap.id}')" class="btn btn-approve">Approve</button>
+                                    <button onclick="rejectWithdrawal('${docSnap.id}', '${w.userId}', ${w.amount})" class="btn btn-reject">Reject & Refund</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    document.getElementById("withdrawRequestsList").innerHTML = html;
+                });
+        }
+
+        function approveWithdrawal(reqId) {
+            db.collection("withdrawal_requests").doc(reqId).update({ status: "approved" }).then(() => {
+                alert("Withdrawal marked as approved!");
+            });
+        }
+
+function rejectWithdrawal(reqId, userId, amount) {
+            let userRef = db.collection("users").doc(userId);
+            db.runTransaction((transaction) => {
+                return transaction.get(userRef).then((uDoc) => {
+                    if (!uDoc.exists) throw "User does not exist!";
+                    let refundedBalance = (uDoc.data().balance || 0) + amount;
+                    transaction.update(userRef, { balance: refundedBalance });
+                    transaction.update(db.collection("withdrawal_requests").doc(reqId), { status: "rejected" });
+                });
+            }).then(() => {
+                alert("Withdrawal rejected and amount refunded to user wallet!");
+            }).catch((err) => {
+                alert("Error: " + err);
+            });
+        }
+    </script>
+</body>
+</html>
