@@ -108,6 +108,11 @@
             transform: scale(0.97);
         }
 
+        .btn:disabled {
+            background: #94a3b8 !important;
+            cursor: not-allowed;
+        }
+
         .btn-approve { background: linear-gradient(135deg, #10b981, #059669); }
         .btn-reject { background: linear-gradient(135deg, #ef4444, #dc2626); }
         .btn-search { background: linear-gradient(135deg, #6366f1, #4f46e5); width: auto; padding: 10px 16px; margin-top: 0; }
@@ -363,6 +368,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // Enable local offline persistence for instant cache loading
+        db.enablePersistence().catch((err) => {});
+
         let selectedPlayer1 = null;
         let activeChatUserId = null;
         let adminChatUnsubscribe = null;
@@ -373,7 +381,6 @@
             loadDepositRequests();
             loadWithdrawRequests();
             loadSuspendedUsers();
-            loadAdminSupportInbox();
             loadAdminSupportInbox();
             loadAdminBotMatches();
             listenForWaitingUsers();
@@ -451,13 +458,12 @@
 
             let randomBotId = "BOT_" + Math.floor(10000000 + Math.random() * 90000000);
 
-            // Create live match in active_matches collection
             db.collection("active_matches").add({
                 player1_id: userId,
                 player1_name: userName,
                 player1_votes: 0,
                 player2_id: randomBotId,
-                player2_name: botName, // Bot name is stored clean so user doesn't know it's a bot
+                player2_name: botName,
                 player2_votes: 0,
                 entry_fee: entryFee,
                 status: "live",
@@ -517,8 +523,6 @@
                         transaction.update(matchRef, { player2_votes: newVotes });
                     }
                 });
-            }).then(() => {
-                // Vote updated live
             }).catch((err) => {
                 alert("Error adding vote: " + err);
             });
@@ -651,7 +655,8 @@
                 resultDiv.innerHTML = "<p style='color: #ef4444; font-size: 13px;'>Error searching user.</p>";
             });
         }
-function toggleUserStatus(userId, newStatus) {
+
+        function toggleUserStatus(userId, newStatus) {
             db.collection("users").doc(userId).update({ status: newStatus }).then(() => {
                 alert("User status changed to " + newStatus.toUpperCase());
                 searchUserById();
@@ -746,7 +751,7 @@ function toggleUserStatus(userId, newStatus) {
                 });
         }
 
-        function selectPlayer1(reqId, userId, userName, entryFee) {
+function selectPlayer1(reqId, userId, userName, entryFee) {
             selectedPlayer1 = { id: reqId, userId: userId, name: userName, entryFee: entryFee };
             document.getElementById("selectedP1Name").innerText = userName + " (Rs. " + entryFee + ")";
             document.getElementById("matchSelectionBanner").style.display = "flex";
@@ -816,9 +821,7 @@ function toggleUserStatus(userId, newStatus) {
                         }
                     }
                 });
-            } catch (e) {
-                console.error("Error fetching stats:", e);
-            }
+            } catch(e) {}
 
             return { wins, losses, highVotes };
         }
@@ -842,15 +845,15 @@ function toggleUserStatus(userId, newStatus) {
                         let userName = userDoc.exists ? (userDoc.data().name || "User") : "User";
 
                         html += `
-                            <div class="item-box">
+                            <div class="item-box" id="dep_box_${docSnap.id}">
                                 <div><strong>User:</strong> ${userName} (Player ID: <span style="color:#6366f1; font-weight:bold;">${playerId}</span>)</div>
                                 <div><strong>Method:</strong> ${d.method} | <strong>Amount:</strong> Rs. ${d.amount}</div>
                                 <div><strong>TRX ID / Hash:</strong> ${d.trxId}</div>
                                 <div><strong>Sender Number:</strong> ${d.senderNumber || "N/A"}</div>
                                 <div><strong>Date:</strong> ${dateStr}</div>
                                 <div style="margin-top: 8px;">
-                                    <button onclick="approveDeposit('${docSnap.id}', '${d.userId}', ${d.amount})" class="btn btn-approve">Approve</button>
-                                    <button onclick="rejectDeposit('${docSnap.id}')" class="btn btn-reject">Reject</button>
+                                    <button id="dep_app_${docSnap.id}" onclick="approveDeposit('${docSnap.id}', '${d.userId}', ${d.amount})" class="btn btn-approve">Approve</button>
+                                    <button id="dep_rej_${docSnap.id}" onclick="rejectDeposit('${docSnap.id}')" class="btn btn-reject">Reject</button>
                                 </div>
                             </div>
                         `;
@@ -860,24 +863,51 @@ function toggleUserStatus(userId, newStatus) {
         }
 
         function approveDeposit(reqId, userId, amount) {
+            let appBtn = document.getElementById(`dep_app_${reqId}`);
+            let rejBtn = document.getElementById(`dep_rej_${reqId}`);
+            if (appBtn) appBtn.disabled = true;
+            if (rejBtn) rejBtn.disabled = true;
+            if (appBtn) appBtn.innerText = "Processing...";
+
             let userRef = db.collection("users").doc(userId);
+            let reqRef = db.collection("deposit_requests").doc(reqId);
+
             db.runTransaction((transaction) => {
-                return transaction.get(userRef).then((uDoc) => {
-                    if (!uDoc.exists) throw "User does not exist!";
-                    let newBalance = (uDoc.data().balance || 0) + amount;
-                    transaction.update(userRef, { balance: newBalance });
-                    transaction.update(db.collection("deposit_requests").doc(reqId), { status: "approved" });
+                return transaction.get(reqRef).then((rDoc) => {
+                    if (!rDoc.exists || rDoc.data().status !== "pending") {
+                        throw "Request already processed!";
+                    }
+                    return transaction.get(userRef).then((uDoc) => {
+                        if (!uDoc.exists) throw "User does not exist!";
+                        let newBalance = (uDoc.data().balance || 0) + amount;
+                        transaction.update(userRef, { balance: newBalance });
+                        transaction.update(reqRef, { status: "approved" });
+                    });
                 });
             }).then(() => {
                 alert("Deposit approved and balance added successfully!");
             }).catch((err) => {
                 alert("Error approving deposit: " + err);
+                if (appBtn) appBtn.disabled = false;
+                if (rejBtn) rejBtn.disabled = false;
+                if (appBtn) appBtn.innerText = "Approve";
             });
         }
 
         function rejectDeposit(reqId) {
+            let appBtn = document.getElementById(`dep_app_${reqId}`);
+            let rejBtn = document.getElementById(`dep_rej_${reqId}`);
+            if (appBtn) appBtn.disabled = true;
+            if (rejBtn) rejBtn.disabled = true;
+            if (rejBtn) rejBtn.innerText = "Processing...";
+
             db.collection("deposit_requests").doc(reqId).update({ status: "rejected" }).then(() => {
                 alert("Deposit request rejected.");
+            }).catch((err) => {
+                alert("Error: " + err);
+                if (appBtn) appBtn.disabled = false;
+                if (rejBtn) rejBtn.disabled = false;
+                if (rejBtn) rejBtn.innerText = "Reject";
             });
         }
 
@@ -900,15 +930,15 @@ function toggleUserStatus(userId, newStatus) {
                         let userName = userDoc.exists ? (userDoc.data().name || "User") : "User";
 
                         html += `
-                            <div class="item-box">
+                            <div class="item-box" id="wd_box_${docSnap.id}">
                                 <div><strong>User:</strong> ${userName} (Player ID: <span style="color:#6366f1; font-weight:bold;">${playerId}</span>)</div>
                                 <div><strong>Method:</strong> ${w.method} | <strong>Amount:</strong> Rs. ${w.amount}</div>
                                 <div><strong>Account Number / ID:</strong> ${w.accountNumber}</div>
                                 <div><strong>Account Title:</strong> ${w.accountTitle || "N/A"}</div>
                                 <div><strong>Date:</strong> ${dateStr}</div>
                                 <div style="margin-top: 8px;">
-                                    <button onclick="approveWithdrawal('${docSnap.id}')" class="btn btn-approve">Approve</button>
-                                    <button onclick="rejectWithdrawal('${docSnap.id}', '${w.userId}', ${w.amount})" class="btn btn-reject">Reject & Refund</button>
+                                    <button id="wd_app_${docSnap.id}" onclick="approveWithdrawal('${docSnap.id}')" class="btn btn-approve">Approve</button>
+                                    <button id="wd_rej_${docSnap.id}" onclick="rejectWithdrawal('${docSnap.id}', '${w.userId}', ${w.amount})" class="btn btn-reject">Reject & Refund</button>
                                 </div>
                             </div>
                         `;
@@ -918,24 +948,60 @@ function toggleUserStatus(userId, newStatus) {
         }
 
         function approveWithdrawal(reqId) {
-            db.collection("withdrawal_requests").doc(reqId).update({ status: "approved" }).then(() => {
+            let appBtn = document.getElementById(`wd_app_${reqId}`);
+            let rejBtn = document.getElementById(`wd_rej_${reqId}`);
+            if (appBtn) appBtn.disabled = true;
+            if (rejBtn) rejBtn.disabled = true;
+            if (appBtn) appBtn.innerText = "Processing...";
+
+            let reqRef = db.collection("withdrawal_requests").doc(reqId);
+
+            db.runTransaction((transaction) => {
+                return transaction.get(reqRef).then((rDoc) => {
+                    if (!rDoc.exists || rDoc.data().status !== "pending") {
+                        throw "Request already processed!";
+                    }
+                    transaction.update(reqRef, { status: "approved" });
+                });
+            }).then(() => {
                 alert("Withdrawal marked as approved!");
+            }).catch((err) => {
+                alert("Error: " + err);
+                if (appBtn) appBtn.disabled = false;
+                if (rejBtn) rejBtn.disabled = false;
+                if (appBtn) appBtn.innerText = "Approve";
             });
         }
 
-function rejectWithdrawal(reqId, userId, amount) {
+        function rejectWithdrawal(reqId, userId, amount) {
+            let appBtn = document.getElementById(`wd_app_${reqId}`);
+            let rejBtn = document.getElementById(`wd_rej_${reqId}`);
+            if (appBtn) appBtn.disabled = true;
+            if (rejBtn) rejBtn.disabled = true;
+            if (rejBtn) rejBtn.innerText = "Processing...";
+
             let userRef = db.collection("users").doc(userId);
+            let reqRef = db.collection("withdrawal_requests").doc(reqId);
+
             db.runTransaction((transaction) => {
-                return transaction.get(userRef).then((uDoc) => {
-                    if (!uDoc.exists) throw "User does not exist!";
-                    let refundedBalance = (uDoc.data().balance || 0) + amount;
-                    transaction.update(userRef, { balance: refundedBalance });
-                    transaction.update(db.collection("withdrawal_requests").doc(reqId), { status: "rejected" });
+                return transaction.get(reqRef).then((rDoc) => {
+                    if (!rDoc.exists || rDoc.data().status !== "pending") {
+                        throw "Request already processed!";
+                    }
+                    return transaction.get(userRef).then((uDoc) => {
+                        if (!uDoc.exists) throw "User does not exist!";
+                        let refundedBalance = (uDoc.data().balance || 0) + amount;
+                        transaction.update(userRef, { balance: refundedBalance });
+                        transaction.update(reqRef, { status: "rejected" });
+                    });
                 });
             }).then(() => {
                 alert("Withdrawal rejected and amount refunded to user wallet!");
             }).catch((err) => {
                 alert("Error: " + err);
+                if (appBtn) appBtn.disabled = false;
+                if (rejBtn) rejBtn.disabled = false;
+                if (rejBtn) rejBtn.innerText = "Reject & Refund";
             });
         }
     </script>

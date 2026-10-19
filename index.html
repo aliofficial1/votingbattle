@@ -1146,11 +1146,13 @@ function updateDepositInfo() {
             });
         }
 
-        function loadUserHistory() {
+                function loadUserHistory() {
             if (!currentUserId) return;
             
+            // ⚡ Sab se latest deposit request sab se pehle show hogi (.orderBy("timestamp", "desc"))
             db.collection("deposit_requests")
                 .where("userId", "==", currentUserId)
+                .orderBy("timestamp", "desc")
                 .get()
                 .then((snapshot) => {
                     allDeposits = [];
@@ -1158,10 +1160,26 @@ function updateDepositInfo() {
                         allDeposits.push({ id: doc.id, ...doc.data() });
                     });
                     renderDepositsList();
+                }).catch((err) => {
+                    // Fallback agar index abhi create na hua ho
+                    db.collection("deposit_requests")
+                        .where("userId", "==", currentUserId)
+                        .get()
+                        .then((snapshot) => {
+                            allDeposits = [];
+                            snapshot.forEach((doc) => {
+                                allDeposits.push({ id: doc.id, ...doc.data() });
+                            });
+                            // Local sorting by timestamp descending
+                            allDeposits.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+                            renderDepositsList();
+                        });
                 });
 
+            // ⚡ Sab se latest withdrawal request sab se pehle show hogi (.orderBy("timestamp", "desc"))
             db.collection("withdrawal_requests")
                 .where("userId", "==", currentUserId)
+                .orderBy("timestamp", "desc")
                 .get()
                 .then((snapshot) => {
                     allWithdrawals = [];
@@ -1169,6 +1187,19 @@ function updateDepositInfo() {
                         allWithdrawals.push({ id: doc.id, ...doc.data() });
                     });
                     renderWithdrawalsList();
+                }).catch((err) => {
+                    // Fallback agar index abhi create na hua ho
+                    db.collection("withdrawal_requests")
+                        .where("userId", "==", currentUserId)
+                        .get()
+                        .then((snapshot) => {
+                            allWithdrawals = [];
+                            snapshot.forEach((doc) => {
+                                allWithdrawals.push({ id: doc.id, ...doc.data() });
+                            });
+                            allWithdrawals.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+                            renderWithdrawalsList();
+                        });
                 });
         }
 
