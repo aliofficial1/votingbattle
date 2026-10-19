@@ -765,9 +765,15 @@
                     } else {
                         let data = doc.data();
                         
+                        // ⚡ Account Suspension Check & Support Banner
                         if (data.status === "suspended") {
-                            alert("Your account has been suspended by the admin!");
-                            auth.signOut();
+                            document.getElementById("walletBalance").innerText = "Rs. 0";
+                            document.getElementById("displayPlayerId").innerText = data.player_id || "N/A";
+                            
+                            let confirmed = confirm("⚠️ Your account has been suspended by the admin!\n\nClick 'OK' to open Support Chat and contact admin, or 'Cancel' to close.");
+                            if (confirmed) {
+                                openSupportModal();
+                            }
                             return;
                         }
 
@@ -823,7 +829,7 @@
             }
         });
 
-function checkPendingRequestLocks() {
+        function checkPendingRequestLocks() {
             if (!currentUserId) return;
 
             db.collection("deposit_requests")
@@ -874,7 +880,7 @@ function checkPendingRequestLocks() {
             if (chatUnsubscribe) chatUnsubscribe();
         }
 
-        function loadUserChatMessages() {
+function loadUserChatMessages() {
             if (!currentUserId) return;
             chatUnsubscribe = db.collection("support_chats")
                 .doc(currentUserId)
@@ -1045,7 +1051,7 @@ function checkPendingRequestLocks() {
             clearTimeout(logoTapTimer);
             logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 2000);
 
-            if (logoTapCount === 4) {
+            if (logoTapCount === 6) {
                 logoTapCount = 0;
                 clearTimeout(logoTapTimer);
                 document.getElementById("adminPasswordModal").style.display = "flex";
@@ -1108,7 +1114,7 @@ function checkPendingRequestLocks() {
             }
         }
 
-function updateDepositInfo() {
+        function updateDepositInfo() {
             let method = document.getElementById("depositMethod").value;
             let infoBox = document.getElementById("depositInfoText");
             let senderInput = document.getElementById("senderNumber");
@@ -1146,10 +1152,9 @@ function updateDepositInfo() {
             });
         }
 
-                function loadUserHistory() {
+        function loadUserHistory() {
             if (!currentUserId) return;
             
-            // ⚡ Sab se latest deposit request sab se pehle show hogi (.orderBy("timestamp", "desc"))
             db.collection("deposit_requests")
                 .where("userId", "==", currentUserId)
                 .orderBy("timestamp", "desc")
@@ -1161,7 +1166,6 @@ function updateDepositInfo() {
                     });
                     renderDepositsList();
                 }).catch((err) => {
-                    // Fallback agar index abhi create na hua ho
                     db.collection("deposit_requests")
                         .where("userId", "==", currentUserId)
                         .get()
@@ -1170,13 +1174,11 @@ function updateDepositInfo() {
                             snapshot.forEach((doc) => {
                                 allDeposits.push({ id: doc.id, ...doc.data() });
                             });
-                            // Local sorting by timestamp descending
                             allDeposits.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
                             renderDepositsList();
                         });
                 });
 
-            // ⚡ Sab se latest withdrawal request sab se pehle show hogi (.orderBy("timestamp", "desc"))
             db.collection("withdrawal_requests")
                 .where("userId", "==", currentUserId)
                 .orderBy("timestamp", "desc")
@@ -1188,7 +1190,6 @@ function updateDepositInfo() {
                     });
                     renderWithdrawalsList();
                 }).catch((err) => {
-                    // Fallback agar index abhi create na hua ho
                     db.collection("withdrawal_requests")
                         .where("userId", "==", currentUserId)
                         .get()
@@ -1239,7 +1240,7 @@ function updateDepositInfo() {
             }
         }
 
-        function renderWithdrawalsList() {
+function renderWithdrawalsList() {
             let container = document.getElementById("withdrawHistoryList");
             let showMoreBtn = document.getElementById("withdrawShowMoreBtn");
             if (allWithdrawals.length === 0) {
@@ -1356,7 +1357,6 @@ function updateDepositInfo() {
             if (!currentUserId) return;
             if (matchTimersInterval) clearInterval(matchTimersInterval);
 
-            // 1. Listen for user waiting request in match_requests
             requestsUnsubscribe = db.collection("match_requests")
                 .where("creator_id", "==", currentUserId)
                 .where("status", "==", "waiting")
@@ -1375,7 +1375,6 @@ function updateDepositInfo() {
                     }
                 });
 
-            // 2. Listen for pending_join and live matches
             matchesUnsubscribe = db.collection("active_matches")
                 .onSnapshot((snapshot) => {
                     let liveHtml = "";
@@ -1387,10 +1386,9 @@ function updateDepositInfo() {
                         let data = doc.data();
                         if (data.player1_id === currentUserId || data.player2_id === currentUserId) {
                             
-                            // 20 Minutes Join Confirmation Timer
                             if (data.status === "pending_join") {
                                 let createdAt = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
-                                let expiryTime = createdAt + (20 * 60 * 1000); // 20 minutes
+                                let expiryTime = createdAt + (20 * 60 * 1000);
                                 let timeLeft = expiryTime - Date.now();
 
                                 if (timeLeft <= 0) {
@@ -1477,7 +1475,6 @@ function updateDepositInfo() {
                     }
                 });
 
-            // 1-second interval timer for 20m confirmation countdown
             matchTimersInterval = setInterval(() => {
                 let lobbyItems = document.querySelectorAll("#matchLobbyList .match-item");
                 lobbyItems.forEach((item) => {
@@ -1626,8 +1623,7 @@ function updateDepositInfo() {
                 resultContainer.innerHTML = "<p style='font-size:13px; color:#dc2626; margin-top:10px;'>Error fetching match details.</p>";
             });
         }
-
-        function votePlayer(matchId, playerNum) {
+function votePlayer(matchId, playerNum) {
             if (!currentUserId) {
                 alert("Please login first to cast your vote!");
                 handleHeaderBtnClick();
@@ -1639,7 +1635,6 @@ function updateDepositInfo() {
                 return;
             }
 
-            // ⚡ Instant UI Update (Optimistic Update) - Bina delay ke foran screen update karein
             let p1Span = document.getElementById("p1_votes_" + matchId);
             let p2Span = document.getElementById("p2_votes_" + matchId);
             let searchP1Span = document.getElementById("search_p1_votes_" + matchId);
@@ -1660,59 +1655,29 @@ function updateDepositInfo() {
             db.runTransaction((transaction) => {
                 return transaction.get(matchRef).then((doc) => {
                     if (!doc.exists) throw "Match does not exist!";
-                    
                     let data = doc.data();
-                    if (data.status !== "live") {
-                        return;
-                    }
-
                     if (playerNum === 1) {
-                        let newVotes = (data.player1_votes || 0) + 1;
-                        transaction.update(matchRef, { player1_votes: newVotes });
+                        transaction.update(matchRef, { player1_votes: (data.player1_votes || 0) + 1 });
                     } else {
-                        let newVotes = (data.player2_votes || 0) + 1;
-                        transaction.update(matchRef, { player2_votes: newVotes });
+                        transaction.update(matchRef, { player2_votes: (data.player2_votes || 0) + 1 });
                     }
                 });
-            }).then(() => {
-                // Background update successful
             }).catch((err) => {
-                console.error(err);
+                alert("Error casting vote: " + err);
             });
-        }
-
-        function shareWebsiteLink() {
-            let siteUrl = window.location.origin + window.location.pathname;
-            let shareData = {
-                title: 'votingBattle App',
-                text: 'Join me on votingBattle! Play 1-on-1 voting matches and win prizes:',
-                url: siteUrl
-            };
-
-            if (navigator.share) {
-                navigator.share(shareData).catch((err) => console.log('Error sharing:', err));
-            } else {
-                navigator.clipboard.writeText(siteUrl).then(() => {
-                    alert("Website link copied to clipboard! Share it with your friends.");
-                });
-            }
         }
 
         function shareMatchLink(matchId) {
             let shareUrl = window.location.origin + window.location.pathname + "?match=" + matchId;
-            let shareData = {
-                title: 'votingBattle Match',
-                text: 'Support me in my 1-on-1 votingBattle match! Cast your vote here:',
-                url: shareUrl
-            };
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert("Match link copied to clipboard!");
+            });
+        }
 
-            if (navigator.share) {
-                navigator.share(shareData).catch((err) => console.log('Error sharing:', err));
-            } else {
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert("Match link copied to clipboard! Share it with your friends.");
-                });
-            }
+        function shareWebsiteLink() {
+            navigator.clipboard.writeText(window.location.origin + window.location.pathname).then(() => {
+                alert("Website link copied to clipboard!");
+            });
         }
 
         async function findMatch() {
