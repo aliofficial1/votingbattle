@@ -80,8 +80,8 @@
         .players-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
         .player-box { background: #020617; border: 1px solid #1e293b; border-radius: 14px; padding: 14px; text-align: center; }
 
-        .pro-match-card { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s; }
-        .pro-match-card:hover { border-color: #334155; }
+        .pro-match-card { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
+        .pro-match-card:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.03); }
     </style>
 </head>
 <body>
@@ -152,7 +152,7 @@
             <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px; box-shadow:none;">Back to Home</button>
         </div>
 
-        <!-- Live Battle Screen (Direct Open) -->
+        <!-- Live Battle Screen -->
         <div id="screen-battle" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
                 <span id="battle-match-id" style="color: #38bdf8; font-family: monospace; font-weight: bold;">ID: #---</span>
@@ -163,6 +163,10 @@
             </div>
 
             <h1>Voting Battle Live!</h1>
+            <!-- Live Stopwatch Timer Counter -->
+            <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px; border-radius: 8px; font-size: 11px; color: #38bdf8; font-weight: bold; margin-bottom: 12px;">
+                ⏱️ Active Duration: <span id="live-stopwatch">00:00:00</span>
+            </div>
             <p style="margin-bottom: 10px;">Collect votes to win the battle pool!</p>
 
             <div class="players-grid">
@@ -239,7 +243,7 @@
         </div>
     </div>
 
-    <!-- SUSPENDED MODAL -->
+   <!-- SUSPENDED MODAL -->
     <div id="suspended-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align: center;">
             <h2 style="color: #ef4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">Account Suspended</h2>
@@ -249,7 +253,7 @@
         </div>
     </div>
 
-     <!-- WALLET MODAL -->
+    <!-- WALLET MODAL -->
     <div id="wallet-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -357,6 +361,13 @@
         let selectedFee = 50;
         let currentMatchId = null;
         let timerInterval = null;
+        let liveStopwatchInterval = null;
+
+        let deviceToken = localStorage.getItem('vb_device_token');
+        if(!deviceToken) {
+            deviceToken = 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+            localStorage.setItem('vb_device_token', deviceToken);
+        }
 
         auth.onAuthStateChanged((user) => {
             document.getElementById('loading-modal').classList.add('hidden');
@@ -398,7 +409,7 @@
                 loadUserStartedMatches();
 
             } else {
-                document.getElementById('auth-modal').classList.remove('hidden');
+                document.getElementById('auth-modal').classList.add('hidden');
                 switchAuthView('login');
             }
         });
@@ -423,14 +434,13 @@
                                 : '<span style="color:#fb7185; font-weight:bold;">Confirm (20m)</span>';
                             
                             html += `
-                                <div class="pro-match-card">
+                                <div class="pro-match-card" onclick="openMatchDirectly('${mId}')">
                                     <div>
                                         <strong style="color:#38bdf8; font-size:11px;">#${mId.substring(6)} (${m.fee} PKR)</strong> - ${statusBadgeHtml}<br>
                                         <small style="color:#94a3b8; font-size:10px;">${m.p1Name} vs ${m.p2Name}</small>
                                     </div>
-                                    <div style="display:flex; gap:4px;">
-                                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); alert('Match link copied!');" style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:5px 8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">Copy</button>
-                                        <button onclick="openMatchDirectly('${mId}')" style="background:#059669; border:none; color:#fff; padding:5px 10px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">Open</button>
+                                    <div>
+                                        <button onclick="event.stopPropagation(); navigator.clipboard.writeText('${shareUrl}'); alert('Match link copied!');" style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:5px 10px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">Copy Link</button>
                                     </div>
                                 </div>
                             `;
@@ -443,7 +453,7 @@
                             if(q.userId === userId) {
                                 activeCount++;
                                 html += `
-                                    <div class="pro-match-card" style="border-color:#334155;">
+                                    <div class="pro-match-card" style="border-color:#334155; cursor:default;">
                                         <div>
                                             <strong style="color:#fb7185; font-size:11px;">In Queue (${q.fee} PKR)</strong><br>
                                             <small style="color:#94a3b8; font-size:10px;">Searching for opponent...</small>
@@ -460,8 +470,7 @@
                 });
             });
         }
-// Direct Open (Skips extra open button steps, goes straight to live battle or confirm lobby)
-        function openMatchDirectly(mId) {
+function openMatchDirectly(mId) {
             currentMatchId = mId;
             db.ref(`matches/${mId}`).once('value', (snapshot) => {
                 let m = snapshot.val();
@@ -673,7 +682,7 @@
             if(tab === 'status') loadTransactions();
         }
 
- function submitDeposit() {
+        function submitDeposit() {
             db.ref(`transactions/${userId}`).once('value', (snapshot) => {
                 let hasPending = false;
                 snapshot.forEach((child) => { if(child.val().status === 'Pending' || child.val().status === 'Processing') hasPending = true; });
@@ -755,7 +764,7 @@
             });
         }
 
-        function openProfileModal() { document.getElementById('profile-modal').classList.remove('hidden'); document.getElementById('match-history-container').classList.add('hidden'); }
+function openProfileModal() { document.getElementById('profile-modal').classList.remove('hidden'); document.getElementById('match-history-container').classList.add('hidden'); }
         function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
         function toggleMatchHistory() {
             const container = document.getElementById('match-history-container');
@@ -809,7 +818,7 @@
 
             const queueKey = userId + "_" + Date.now();
             db.ref(`queues/${selectedFee}/${queueKey}`).set({
-                userId: userId, userName: userName, fee: selectedFee, timestamp: Date.now()
+                userId: userId, userName: userName, fee: selectedFee, timestamp: firebase.database.ServerValue.TIMESTAMP
             });
             alert("Match request added to queue! Waiting for admin to pair.");
         }
@@ -818,12 +827,26 @@
             currentMatchId = matchId;
             switchScreen('screen-confirm');
             document.getElementById('battle-match-id').innerText = `ID: #${matchId}`;
-            
-            startCountdownTimer(1200);
 
             db.ref(`matches/${matchId}`).on('value', (snapshot) => {
                 const match = snapshot.val();
                 if(!match) return;
+
+                const createdAt = match.createdAt || Date.now();
+                const elapsedTime = Math.floor((Date.now() - createdAt) / 1000);
+                const remainingSecs = 1200 - elapsedTime;
+
+                if(timerInterval) clearInterval(timerInterval);
+                if(remainingSecs <= 0) {
+                    document.getElementById('timer-display').innerText = "00:00:00";
+                    alert("Match confirmation timed out!");
+                    db.ref(`matches/${currentMatchId}`).remove();
+                    switchScreen('screen-home');
+                    return;
+                }
+
+                startRealtimeCountdown(remainingSecs);
+
                 document.getElementById('p1-name').innerText = match.p1Name || 'Player 1';
                 document.getElementById('p2-name').innerText = match.p2Name || 'Player 2';
                 
@@ -837,12 +860,12 @@
             });
         }
 
-        function startCountdownTimer(durationSeconds) {
-            let timer = durationSeconds, minutes, seconds;
+        function startRealtimeCountdown(durationSeconds) {
+            let timer = durationSeconds;
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                minutes = parseInt((timer % 3600) / 60, 10);
-                seconds = parseInt(timer % 60, 10);
+                let minutes = parseInt((timer % 3600) / 60, 10);
+                let seconds = parseInt(timer % 60, 10);
 
                 minutes = minutes < 10 ? "0" + minutes : minutes;
                 seconds = seconds < 10 ? "0" + seconds : seconds;
@@ -850,9 +873,6 @@
                 document.getElementById('timer-display').innerText = "00:" + minutes + ":" + seconds;
                 if (--timer < 0) {
                     clearInterval(timerInterval);
-                    alert("Match cancelled due to 20-minute timeout!");
-                    db.ref(`matches/${currentMatchId}`).remove();
-                    switchScreen('screen-home');
                 }
             }, 1000);
         }
@@ -877,7 +897,10 @@
             document.getElementById('battle-p1-name').innerText = match.p1Name;
             document.getElementById('battle-p2-name').innerText = match.p2Name;
 
-            // Check if this device already voted for this match
+            // Start Live Stopwatch Timer from match creation time
+            const createdAt = match.createdAt || Date.now();
+            startLiveStopwatch(createdAt);
+
             checkDeviceVotedStatus();
 
             db.ref(`matches/${currentMatchId}`).on('value', (snapshot) => {
@@ -889,37 +912,88 @@
             });
         }
 
-        // One vote per device check using localStorage
+        function startLiveStopwatch(startTime) {
+            if(liveStopwatchInterval) clearInterval(liveStopwatchInterval);
+            liveStopwatchInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = Math.floor((now - startTime) / 1000);
+                
+                const hours = Math.floor(diff / 3600);
+                const minutes = Math.floor((diff % 3600) / 60);
+                const seconds = diff % 60;
+
+                const formatted = 
+                    String(hours).padStart(2, '0') + ":" +
+                    String(minutes).padStart(2, '0') + ":" +
+                    String(seconds).padStart(2, '0');
+
+                const el = document.getElementById('live-stopwatch');
+                if(el) el.innerText = formatted;
+            }, 1000);
+        }
+
         function checkDeviceVotedStatus() {
-            const votedMatchKey = `voted_${currentMatchId}`;
-            const hasVoted = localStorage.getItem(votedMatchKey);
-            if(hasVoted) {
-                document.getElementById('vote-btn-p1').disabled = true;
-                document.getElementById('vote-btn-p1').innerText = "Already Voted";
-                document.getElementById('vote-btn-p1').style.background = "#334155";
-                document.getElementById('vote-btn-p2').disabled = true;
-                document.getElementById('vote-btn-p2').innerText = "Already Voted";
-                document.getElementById('vote-btn-p2').style.background = "#334155";
+            const localVoted = localStorage.getItem(`voted_${currentMatchId}`);
+            if(localVoted) {
+                disableVotingButtons();
+                return;
+            }
+
+            db.ref(`match_votes/${currentMatchId}/${deviceToken}`).once('value', (snapshot) => {
+                if(snapshot.exists()) {
+                    localStorage.setItem(`voted_${currentMatchId}`, "true");
+                    disableVotingButtons();
+                }
+            });
+        }
+
+        function disableVotingButtons() {
+            const btn1 = document.getElementById('vote-btn-p1');
+            const btn2 = document.getElementById('vote-btn-p2');
+            if(btn1 && btn2) {
+                btn1.disabled = true;
+                btn1.innerText = "Already Voted";
+                btn1.style.background = "#334155";
+                btn2.disabled = true;
+                btn2.innerText = "Already Voted";
+                btn2.style.background = "#334155";
             }
         }
 
         function castVote(playerKey) {
-            const votedMatchKey = `voted_${currentMatchId}`;
-            if(localStorage.getItem(votedMatchKey)) {
+            const localVoted = localStorage.getItem(`voted_${currentMatchId}`);
+            if(localVoted) {
                 alert("You have already cast your vote from this device!");
+                disableVotingButtons();
                 return;
             }
 
-            const voteField = playerKey === 'p1' ? 'votesP1' : 'votesP2';
-            db.ref(`matches/${currentMatchId}`).transaction((match) => {
-                if (match) match[voteField] = (match[voteField] || 0) + 1;
-                return match;
-            }, (error, committed) => {
-                if(committed) {
-                    localStorage.setItem(votedMatchKey, playerKey);
-                    checkDeviceVotedStatus();
-                    alert("Vote registered successfully!");
+            db.ref(`match_votes/${currentMatchId}/${deviceToken}`).once('value', (snapshot) => {
+                if(snapshot.exists()) {
+                    localStorage.setItem(`voted_${currentMatchId}`, "true");
+                    alert("You have already cast your vote from this device!");
+                    disableVotingButtons();
+                    return;
                 }
+
+                db.ref(`match_votes/${currentMatchId}/${deviceToken}`).set(playerKey, (err) => {
+                    if(err) {
+                        alert("Error casting vote!");
+                        return;
+                    }
+
+                    const voteField = playerKey === 'p1' ? 'votesP1' : 'votesP2';
+                    db.ref(`matches/${currentMatchId}`).transaction((match) => {
+                        if (match) match[voteField] = (match[voteField] || 0) + 1;
+                        return match;
+                    }, (error, committed) => {
+                        if(committed) {
+                            localStorage.setItem(`voted_${currentMatchId}`, playerKey);
+                            disableVotingButtons();
+                            alert("Vote registered successfully!");
+                        }
+                    });
+                });
             });
         }
 
@@ -933,7 +1007,6 @@
             let inputVal = document.getElementById('search-match-id').value.trim();
             if(!inputVal) { alert("Please enter Match ID or URL"); return; }
             
-            // Extract match ID if full URL is pasted
             let matchId = inputVal;
             if(inputVal.includes("?match=")) {
                 matchId = inputVal.split("?match=")[1].split("&")[0];
