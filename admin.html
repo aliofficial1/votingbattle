@@ -47,9 +47,21 @@
         </div>
     </div>
 
-    <!-- Create Bot Match Card -->
+    <!-- Match Queues & Manual Pairing -->
+    <div class="grid-2">
+        <div class="card">
+            <h2>Queue Match Requests (Rs. 50)</h2>
+            <div id="queue-50-list">Loading queue...</div>
+        </div>
+        <div class="card">
+            <h2>Queue Match Requests (Rs. 100)</h2>
+            <div id="queue-100-list">Loading queue...</div>
+        </div>
+    </div>
+
+    <!-- Create Custom Match Card -->
     <div class="card" style="border: 1px solid #38bdf8;">
-        <h2>Create Bot / Fake Match</h2>
+        <h2>Create Custom Match</h2>
         <div class="grid-2" style="margin-bottom:0;">
             <div>
                 <label style="font-size:11px; color:#94a3b8;">Select Fee</label>
@@ -59,11 +71,11 @@
                 </select>
             </div>
             <div>
-                <label style="font-size:11px; color:#94a3b8;">Bot / Opponent Name</label>
-                <input type="text" id="bot-name" placeholder="Enter bot name...">
+                <label style="font-size:11px; color:#94a3b8;">Opponent Name</label>
+                <input type="text" id="bot-name" placeholder="Enter opponent name...">
             </div>
         </div>
-        <button class="btn btn-success" onclick="createBotMatch()" style="width:100%; margin-top:8px;">Create Bot Match</button>
+        <button class="btn btn-success" onclick="createBotMatch()" style="width:100%; margin-top:8px;">Create Match</button>
     </div>
 
     <!-- Last 1 Day Report -->
@@ -91,12 +103,12 @@
     <div class="grid-2">
         <!-- Matches 50 -->
         <div class="card">
-            <h2>Matches (Rs. 50 Fee)</h2>
+            <h2>Active Matches (Rs. 50 Fee)</h2>
             <div id="matches-50-list">Loading...</div>
         </div>
         <!-- Matches 100 -->
         <div class="card">
-            <h2>Matches (Rs. 100 Fee)</h2>
+            <h2>Active Matches (Rs. 100 Fee)</h2>
             <div id="matches-100-list">Loading...</div>
         </div>
     </div>
@@ -172,6 +184,7 @@
         let searchedUserId = null;
 
         window.onload = function() {
+            loadQueues();
             loadAllDeposits();
             loadAllWithdrawals();
             loadMatches();
@@ -179,18 +192,80 @@
             loadOneDayReport();
         };
 
+        function loadQueues() {
+            db.ref('queues').on('value', (snapshot) => {
+                const list50 = document.getElementById('queue-50-list');
+                const list100 = document.getElementById('queue-100-list');
+                list50.innerHTML = ''; list100.innerHTML = '';
+                let h50 = '', h100 = '';
+
+                let q50 = snapshot.child('50').val() || {};
+                let q100 = snapshot.child('100').val() || {};
+
+                Object.keys(q50).forEach(uId => {
+                    let u = q50[uId];
+                    h50 += `<div class="item-box"><span>${u.userName} (${u.userId})</span><button class="btn btn-success" onclick="pairUsers('50', '${u.userId}', '${u.userName}')">Pair Match</button></div>`;
+                });
+
+                Object.keys(q100).forEach(uId => {
+                    let u = q100[uId];
+                    h100 += `<div class="item-box"><span>${u.userName} (${u.userId})</span><button class="btn btn-success" onclick="pairUsers('100', '${u.userId}', '${u.userName}')">Pair Match</button></div>`;
+                });
+
+                list50.innerHTML = h50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
+                list100.innerHTML = h100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
+            });
+        }
+
+        function pairUsers(fee, uId, uName) {
+            db.ref(`queues/${fee}`).once('value', (snap) => {
+                let users = [];
+                snap.forEach(c => { if(c.val().userId !== uId) users.push(c.val()); });
+                
+                let oppId = "", oppName = "";
+                if(users.length > 0) {
+                    oppId = users[0].userId;
+                    oppName = users[0].userName;
+                } else {
+                    oppId = "Challenger_" + Math.floor(100 + Math.random()*900);
+                    oppName = "Challenger Player";
+                }
+
+                const matchId = 'match_' + Date.now();
+                db.ref(`matches/${matchId}`).set({
+                    p1Id: uId,
+                    p1Name: uName,
+                    p2Id: oppId,
+                    p2Name: oppName,
+                    fee: parseInt(fee),
+                    status: 'confirming',
+                    p1Confirmed: false,
+                    p2Confirmed: false,
+                    votesP1: 0,
+                    votesP2: 0,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                db.ref(`queues/${fee}/${uId}`).remove();
+                if(!oppId.includes("Challenger_")) db.ref(`queues/${fee}/${oppId}`).remove();
+
+                db.ref(`user_active_match/${uId}`).set({ matchId });
+                if(!oppId.includes("Challenger_")) db.ref(`user_active_match/${oppId}`).set({ matchId });
+
+                alert(`Match started between ${uName} and ${oppName}!`);
+            });
+        }
+
         function createBotMatch() {
             const fee = parseInt(document.getElementById('bot-fee').value);
             const botName = document.getElementById('bot-name').value.trim();
-            if(!botName) { alert("Enter bot name"); return; }
+            if(!botName) { alert("Please enter opponent name"); return; }
 
             const matchId = 'match_' + Date.now();
-            const fakeUserId = 'Bot_' + Math.floor(1000 + Math.random() * 9000);
-
             db.ref(`matches/${matchId}`).set({
-                p1Id: fakeUserId,
+                p1Id: 'Player_' + Math.floor(1000 + Math.random() * 9000),
                 p1Name: botName,
-                p2Id: "Admin_Bot",
+                p2Id: "Challenger_ID",
                 p2Name: "Challenger",
                 fee: fee,
                 status: 'confirming',
@@ -198,10 +273,9 @@
                 p2Confirmed: false,
                 votesP1: 0,
                 votesP2: 0,
-                isBotMatch: true,
                 createdAt: firebase.database.ServerValue.TIMESTAMP
             });
-            alert("Bot match created!");
+            alert("Match created successfully!");
             document.getElementById('bot-name').value = '';
         }
 
@@ -210,22 +284,17 @@
             const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
 
             db.ref('matches').once('value', (snapshot) => {
-                let wins50 = 0, wins100 = 0, botWins = 0, botLosses = 0;
+                let wins50 = 0, wins100 = 0;
                 snapshot.forEach((child) => {
                     let m = child.val();
                     if(m.createdAt >= oneDayAgo) {
                         if(m.fee == 50) wins50++;
                         if(m.fee == 100) wins100++;
-                        if(m.isBotMatch) {
-                            if((m.votesP1 || 0) >= (m.votesP2 || 0)) botWins++;
-                            else botLosses++;
-                        }
                     }
                 });
                 reportEl.innerHTML = `
-                    • 50 PKR Matches: <b>${wins50}</b><br>
-                    • 100 PKR Matches: <b>${wins100}</b><br>
-                    • Bot Wins: <b style="color:#34d399;">${botWins}</b> | Bot Losses: <b style="color:#f43f5e;">${botLosses}</b>
+                    • 50 PKR Matches Played: <b>${wins50}</b><br>
+                    • 100 PKR Matches Played: <b>${wins100}</b>
                 `;
             });
         }
@@ -251,7 +320,7 @@
                     let d = items[i];
                     html += `
                         <div class="item-box">
-                            <div><strong>${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>TID: ${d.tid || 'N/A'}</small></div>
+                            <div><strong>User: ${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>From Acc: ${d.senderAcc || 'N/A'} | TID: ${d.tid || 'N/A'}</small></div>
                             <div>
                                 <button class="btn btn-success" onclick="approveTx('${d.uId}', '${d.txKey}', 'Deposit')">Approve</button>
                                 <button class="btn btn-danger" onclick="rejectTx('${d.uId}', '${d.txKey}')">Reject</button>
@@ -285,7 +354,7 @@
                     let w = items[i];
                     html += `
                         <div class="item-box">
-                            <div><strong>${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount} (${w.method})</span><br><small>Name: ${w.accName} | Acc: ${w.account}</small></div>
+                            <div><strong>User: ${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount} (${w.method})</span><br><small>Name: ${w.accName} | Acc: ${w.account}</small></div>
                             <div>
                                 <button class="btn btn-success" onclick="approveTx('${w.uId}', '${w.txKey}', 'Withdrawal')">Approve</button>
                                 <button class="btn btn-danger" onclick="rejectTx('${w.uId}', '${w.txKey}')">Reject</button>
@@ -300,7 +369,7 @@
 
         function approveTx(uId, txKey, type) {
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' });
-            alert(`${type} approved!`);
+            alert(`${type} approved successfully!`);
         }
         function rejectTx(uId, txKey) {
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Rejected' });
@@ -333,7 +402,7 @@
 
         function searchUser() {
             const uId = document.getElementById('search-user-id').value.trim();
-            if(!uId) { alert("Enter ID"); return; }
+            if(!uId) { alert("Please enter User ID"); return; }
             searchedUserId = uId;
 
             db.ref(`users/${uId}`).once('value', (snapshot) => {
@@ -368,7 +437,7 @@
             let nb = parseFloat(document.getElementById('new-user-bal').value);
             db.ref(`users/${searchedUserId}`).update({ balance: nb });
             document.getElementById('u-bal').innerText = nb;
-            alert("Balance updated!");
+            alert("Balance updated successfully!");
         }
 
         function toggleAccountSuspension() {
@@ -382,7 +451,7 @@
 
         function openSuspendedModal() {
             document.getElementById('suspended-modal').classList.remove('hidden');
-             const cont = document.getElementById('suspended-list-container');
+            const cont = document.getElementById('suspended-list-container');
             cont.innerHTML = 'Loading...';
             db.ref('users').once('value', (snapshot) => {
                 cont.innerHTML = '';
@@ -398,6 +467,7 @@
         function closeSuspendedModal() { document.getElementById('suspended-modal').classList.add('hidden'); }
         function unsuspend(uId) { db.ref(`users/${uId}`).update({ suspended: false }); openSuspendedModal(); }
 
+        // Support Chats with Latest First / Show More pagination (4 limit initially)
         function loadSupportChatsList() {
             db.ref('support_chats').on('value', (snapshot) => {
                 const listEl = document.getElementById('support-users-list');

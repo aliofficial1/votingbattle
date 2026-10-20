@@ -92,7 +92,7 @@
         <!-- Home Card -->
         <div id="screen-home" class="card">
             <h1>Head-to-Head Voting Battle</h1>
-            <p>Choose your entry fee, find an opponent, get confirmed, and win votes to claim the prize pool!</p>
+            <p>Choose your entry fee, find an opponent, get paired, and win votes to claim the prize pool!</p>
             
             <div style="text-align: left; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Select Entry Fee (PKR)</div>
             <div class="fee-grid">
@@ -106,8 +106,8 @@
 
             <div id="match-lobby-box" class="lobby-box hidden">
                 <div class="spinner"></div>
-                <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 4px; color:#38bdf8;">Finding Opponent...</h3>
-                <p style="font-size: 11px; margin-bottom: 8px;">Waiting for opponent with Rs. <span id="wait-fee">50</span> fee.</p>
+                <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 4px; color:#38bdf8;">In Queue...</h3>
+                <p style="font-size: 11px; margin-bottom: 8px;">Waiting to be paired for match (Fee: Rs. <span id="wait-fee">50</span>).</p>
                 <button onclick="cancelQueue()" class="cancel-link">Cancel Queue</button>
             </div>
 
@@ -124,7 +124,7 @@
         <div id="screen-confirm" class="card hidden">
             <div class="status-badge badge-waiting">Action Required: Confirm Join</div>
             <h1>Match Found!</h1>
-            <p>Both players must confirm within <span id="timer-display" style="color: #38bdf8; font-weight: bold;">20:00</span> minutes or the match will be cancelled.</p>
+            <p>Both players must confirm within <span id="timer-display" style="color: #38bdf8; font-weight: bold;">02:00:00</span> hours or the match will be cancelled.</p>
 
             <div class="players-grid">
                 <div class="player-box">
@@ -204,6 +204,9 @@
                     Send amount to EasyPaisa Name: <b>Ali Khan</b> | Number: <b>03001234567</b>
                 </div>
 
+                <label style="font-size: 11px; color:#94a3b8;">Sender Account Number</label>
+                <input type="text" id="dep-sender-acc" placeholder="Enter your account number...">
+
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="dep-amount" placeholder="Enter amount...">
 
@@ -245,7 +248,7 @@
     <div id="support-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="font-size: 16px; font-weight: bold;">Admin Support Chat</h3>
+                <h3 style="font-size: 16px; font-weight: bold;">Support Chat</h3>
                 <button class="close-modal" onclick="closeSupportModal()">✕</button>
             </div>
             
@@ -309,11 +312,9 @@
         let balance = 1000;
         let selectedFee = 50;
         let currentMatchId = null;
-        let isPlayerOne = false;
         let timerInterval = null;
-        let dbRef = null;
 
-        // Admin Logo 6-Tap
+        // Admin Login 6-Tap Gesture
         let logoTapCount = 0;
         let logoTapTimer = null;
         function handleLogoClick() {
@@ -451,8 +452,6 @@
             selectedFee = fee;
             document.getElementById('fee-btn-50').className = "fee-btn" + (fee === 50 ? " active" : "");
             document.getElementById('fee-btn-100').className = "fee-btn" + (fee === 100 ? " active" : "");
-            
-            // Winning Prize Calculation Display
             const prizeText = fee === 50 ? "Winning Prize: Rs. 95" : "Winning Prize: Rs. 190";
             document.getElementById('prize-display').innerText = prizeText;
         }
@@ -488,18 +487,20 @@
             db.ref(`transactions/${userId}`).once('value', (snapshot) => {
                 let hasPending = false;
                 snapshot.forEach((child) => { if(child.val().status === 'Pending' || child.val().status === 'Processing') hasPending = true; });
-                if(hasPending) { alert("Aapki request pehle se pending/processing mein hai!"); return; }
+                if(hasPending) { alert("Your request is already pending or processing!"); return; }
 
                 const method = document.getElementById('dep-method').value;
+                const senderAcc = document.getElementById('dep-sender-acc').value.trim();
                 const amount = parseFloat(document.getElementById('dep-amount').value);
                 const tid = document.getElementById('dep-tid').value.trim();
                 
-                if(!amount || amount <= 0 || !tid) { alert("Enter valid amount and Transaction ID (TID)"); return; }
+                if(!amount || amount <= 0 || !tid || !senderAcc) { alert("Please fill all deposit details correctly (Sender Account, Amount & TID)"); return; }
 
                 db.ref(`transactions/${userId}`).push({
-                    type: 'Deposit', method, amount, tid, status: 'Pending', timestamp: Date.now()
+                    type: 'Deposit', method, senderAcc, amount, tid, status: 'Pending', timestamp: Date.now()
                 });
                 alert("Deposit request submitted successfully!");
+                document.getElementById('dep-sender-acc').value = '';
                 document.getElementById('dep-amount').value = '';
                 document.getElementById('dep-tid').value = '';
             });
@@ -509,14 +510,14 @@
             db.ref(`transactions/${userId}`).once('value', (snapshot) => {
                 let hasPending = false;
                 snapshot.forEach((child) => { if(child.val().status === 'Pending' || child.val().status === 'Processing') hasPending = true; });
-                if(hasPending) { alert("Aapki request pehle se pending/processing mein hai!"); return; }
+                if(hasPending) { alert("Your request is already pending or processing!"); return; }
 
                 const method = document.getElementById('wd-method').value;
                 const accName = document.getElementById('wd-name').value.trim();
                 const account = document.getElementById('wd-account').value.trim();
                 const amount = parseFloat(document.getElementById('wd-amount').value);
 
-                if(!accName || !account || !amount || amount <= 0) { alert("Fill all details correctly"); return; }
+                if(!accName || !account || !amount || amount <= 0) { alert("Please fill all withdrawal details correctly"); return; }
                 if(amount > balance) { alert("Insufficient balance!"); return; }
 
                 balance -= amount;
@@ -525,7 +526,7 @@
                 db.ref(`transactions/${userId}`).push({
                     type: 'Withdrawal', method, accName, account, amount, status: 'Pending', timestamp: Date.now()
                 });
-                alert("Withdrawal request submitted!");
+                alert("Withdrawal request submitted successfully!");
                 document.getElementById('wd-name').value = '';
                 document.getElementById('wd-account').value = '';
                 document.getElementById('wd-amount').value = '';
@@ -551,7 +552,7 @@
                             <div class="history-item">
                                 <div>
                                     <strong style="color:${tx.type === 'Deposit' ? '#34d399':'#fb7185'}">${tx.type} (${tx.method})</strong>
-                                    <div style="color:#94a3b8; font-size:10px;">Rs. ${tx.amount} ${tx.tid ? '| TID: '+tx.tid : ''}</div>
+                                    <div style="color:#94a3b8; font-size:10px;">Rs. ${tx.amount} ${tx.tid ? '| TID: '+tx.tid : ''} ${tx.senderAcc ? '| From: '+tx.senderAcc : ''}</div>
                                     <div style="color:#64748b; font-size:9px;">${dateStr}</div>
                                 </div>
                                 <span class="status-tag status-pending">${tx.status}</span>
@@ -611,20 +612,18 @@
             document.getElementById('start-match-btn').classList.add('hidden');
             document.getElementById('match-lobby-box').classList.remove('hidden');
 
-            const queueRef = db.ref(`queues/${selectedFee}`);
-            queueRef.once('value', (snapshot) => {
-                const queueData = snapshot.val();
-                if (!queueData) {
-                    isPlayerOne = true;
-                    currentMatchId = 'match_' + Date.now();
-                    queueRef.set({ matchId: currentMatchId, p1Id: userId, p1Name: userName, fee: selectedFee, createdAt: firebase.database.ServerValue.TIMESTAMP });
-                    listenForMatch(currentMatchId);
-                } else {
-                    isPlayerOne = false;
-                    currentMatchId = queueData.matchId;
-                    db.ref(`matches/${currentMatchId}`).update({ p2Id: userId, p2Name: userName, status: 'confirming', p1Confirmed: false, p2Confirmed: false, votesP1: 0, votesP2: 0, createdAt: firebase.database.ServerValue.TIMESTAMP });
-                    queueRef.remove();
-                    enterConfirmationScreen(currentMatchId);
+            const queueKey = userId;
+            db.ref(`queues/${selectedFee}/${queueKey}`).set({
+                userId: userId,
+                userName: userName,
+                fee: selectedFee,
+                timestamp: Date.now()
+            });
+
+            db.ref(`user_active_match/${userId}`).on('value', (snapshot) => {
+                if(snapshot.exists()) {
+                    const mId = snapshot.val().matchId;
+                    enterConfirmationScreen(mId);
                 }
             });
         }
@@ -632,24 +631,19 @@
         function cancelQueue() {
             balance += selectedFee;
             document.getElementById('user-balance').innerText = balance;
-            if(currentMatchId) db.ref(`queues/${selectedFee}`).remove();
+            db.ref(`queues/${selectedFee}/${userId}`).remove();
+            db.ref(`user_active_match/${userId}`).remove();
             document.getElementById('match-lobby-box').classList.add('hidden');
             document.getElementById('start-match-btn').classList.remove('hidden');
-        }
-
-        function listenForMatch(matchId) {
-            dbRef = db.ref(`matches/${matchId}`);
-            dbRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.p2Id) enterConfirmationScreen(matchId);
-            });
         }
 
         function enterConfirmationScreen(matchId) {
             currentMatchId = matchId;
             switchScreen('screen-confirm');
             document.getElementById('battle-match-id').innerText = `ID: #${matchId}`;
-            startCountdownTimer(1200);
+            
+            // 2 Hours Real-time Countdown Timer (7200 seconds)
+            startCountdownTimer(7200);
 
             db.ref(`matches/${matchId}`).on('value', (snapshot) => {
                 const match = snapshot.val();
@@ -663,14 +657,18 @@
         }
 
         function startCountdownTimer(durationSeconds) {
-            let timer = durationSeconds, minutes, seconds;
+            let timer = durationSeconds, hours, minutes, seconds;
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                minutes = parseInt(timer / 60, 10);
+                hours = parseInt(timer / 3600, 10);
+                minutes = parseInt((timer % 3600) / 60, 10);
                 seconds = parseInt(timer % 60, 10);
+
+                hours = hours < 10 ? "0" + hours : hours;
                 minutes = minutes < 10 ? "0" + minutes : minutes;
                 seconds = seconds < 10 ? "0" + seconds : seconds;
-                document.getElementById('timer-display').innerText = minutes + ":" + seconds;
+
+                document.getElementById('timer-display').innerText = hours + ":" + minutes + ":" + seconds;
                 if (--timer < 0) {
                     clearInterval(timerInterval);
                     alert("Match cancelled due to timeout!");
@@ -682,12 +680,16 @@
         }
 
         function confirmMatchJoin() {
-            const field = isPlayerOne ? 'p1Confirmed' : 'p2Confirmed';
-            db.ref(`matches/${currentMatchId}`).update({ [field]: true });
-            const btn = document.getElementById('btn-confirm-join');
-            btn.disabled = true;
-            btn.style.background = "#1e293b";
-            btn.innerText = "Waiting for Opponent...";
+            db.ref(`matches/${currentMatchId}`).once('value', (snapshot) => {
+                const match = snapshot.val();
+                if(!match) return;
+                const field = (match.p1Id === userId) ? 'p1Confirmed' : 'p2Confirmed';
+                db.ref(`matches/${currentMatchId}`).update({ [field]: true });
+                const btn = document.getElementById('btn-confirm-join');
+                btn.disabled = true;
+                btn.style.background = "#1e293b";
+                btn.innerText = "Waiting for Opponent...";
+            });
         }
 
         function enterBattleScreen(match) {
@@ -717,12 +719,12 @@
         function shareMatchLink() {
             const shareUrl = window.location.origin + window.location.pathname + "?match=" + currentMatchId;
             navigator.clipboard.writeText(shareUrl);
-            alert("Match link copied!");
+            alert("Match link copied to clipboard!");
         }
 
         function searchMatch() {
             const matchId = document.getElementById('search-match-id').value.trim();
-            if(!matchId) { alert("Enter Match ID"); return; }
+            if(!matchId) { alert("Please enter Match ID"); return; }
             db.ref(`matches/${matchId}`).once('value', (snapshot) => {
                 if(snapshot.exists()) { currentMatchId = matchId; enterBattleScreen(snapshot.val()); }
                 else alert("Match not found!");
