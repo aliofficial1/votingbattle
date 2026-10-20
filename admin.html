@@ -43,11 +43,11 @@
         <div class="logo">VoteBattle Admin Panel</div>
         <div style="display:flex; gap:8px;">
             <button class="btn btn-secondary" onclick="window.location.href='index.html'">Back to Home</button>
-            <button class="btn btn-danger" onclick="openSuspendedModal()">Suspended</button>
+            <button class="btn btn-danger" onclick="openSuspendedModal()">Suspended Accounts</button>
         </div>
     </div>
 
-    <!-- Match Queues & Manual Pairing -->
+    <!-- Match Queues & Manual Pairing with User Stats -->
     <div class="grid-2">
         <div class="card">
             <h2>Queue Match Requests (Rs. 50)</h2>
@@ -59,23 +59,39 @@
         </div>
     </div>
 
-    <!-- Create Custom Match Card -->
+    <!-- Create Custom Match with Bot Lobby & Unlimited Admin Voting -->
     <div class="card" style="border: 1px solid #38bdf8;">
-        <h2>Create Custom Match</h2>
+        <h2>Create Custom Match (Bot / Opponent)</h2>
         <div class="grid-2" style="margin-bottom:0;">
             <div>
                 <label style="font-size:11px; color:#94a3b8;">Select Fee</label>
-                <select id="bot-fee">
+                <select id="custom-fee">
                     <option value="50">Rs. 50</option>
                     <option value="100">Rs. 100</option>
                 </select>
             </div>
             <div>
-                <label style="font-size:11px; color:#94a3b8;">Opponent Name</label>
-                <input type="text" id="bot-name" placeholder="Enter opponent name...">
+                <label style="font-size:11px; color:#94a3b8;">Real User ID</label>
+                <input type="text" id="custom-user-id" placeholder="Enter 8-digit User ID...">
             </div>
         </div>
-        <button class="btn btn-success" onclick="createBotMatch()" style="width:100%; margin-top:8px;">Create Match</button>
+        <div style="margin-top: 8px;">
+            <label style="font-size:11px; color:#94a3b8;">Opponent / Bot Name</label>
+            <input type="text" id="custom-bot-name" placeholder="Enter opponent name...">
+        </div>
+        <button class="btn btn-success" onclick="createCustomMatch()" style="width:100%; margin-top:8px;">Start Custom Match</button>
+    </div>
+
+    <!-- Active Matches with Unlimited Admin Voting Control -->
+    <div class="grid-2">
+        <div class="card">
+            <h2>Active Matches (Rs. 50 Fee)</h2>
+            <div id="matches-50-list">Loading...</div>
+        </div>
+        <div class="card">
+            <h2>Active Matches (Rs. 100 Fee)</h2>
+            <div id="matches-100-list">Loading...</div>
+        </div>
     </div>
 
     <!-- Last 1 Day Report -->
@@ -97,19 +113,6 @@
             <h2>Withdrawal Requests</h2>
             <div id="withdraw-list">Loading...</div>
             <button id="wd-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('withdraw')" style="width:100%; margin-top:8px;">Show More</button>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <!-- Matches 50 -->
-        <div class="card">
-            <h2>Active Matches (Rs. 50 Fee)</h2>
-            <div id="matches-50-list">Loading...</div>
-        </div>
-        <!-- Matches 100 -->
-        <div class="card">
-            <h2>Active Matches (Rs. 100 Fee)</h2>
-            <div id="matches-100-list">Loading...</div>
         </div>
     </div>
 
@@ -143,7 +146,7 @@
     <div id="suspended-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-                <h3 style="font-size:15px; color:#ef4444;">Suspended Accounts</h3>
+                <h3 style="font-size:15px; color:#ef4444;">Suspended Accounts List</h3>
                 <button class="btn btn-secondary" onclick="closeSuspendedModal()">✕</button>
             </div>
             <div id="suspended-list-container">Loading...</div>
@@ -193,27 +196,64 @@
         };
 
         function loadQueues() {
-            db.ref('queues').on('value', (snapshot) => {
-                const list50 = document.getElementById('queue-50-list');
-                const list100 = document.getElementById('queue-100-list');
-                list50.innerHTML = ''; list100.innerHTML = '';
-                let h50 = '', h100 = '';
+            db.ref('queues').on('value', (queueSnap) => {
+                db.ref('matches').once('value', (matchSnap) => {
+                    const list50 = document.getElementById('queue-50-list');
+                    const list100 = document.getElementById('queue-100-list');
+                    list50.innerHTML = ''; list100.innerHTML = '';
+                    let h50 = '', h100 = '';
 
-                let q50 = snapshot.child('50').val() || {};
-                let q100 = snapshot.child('100').val() || {};
+                    let q50 = queueSnap.child('50').val() || {};
+                    let q100 = queueSnap.child('100').val() || {};
 
-                Object.keys(q50).forEach(uId => {
-                    let u = q50[uId];
-                    h50 += `<div class="item-box"><span>${u.userName} (${u.userId})</span><button class="btn btn-success" onclick="pairUsers('50', '${u.userId}', '${u.userName}')">Pair Match</button></div>`;
+                    function getUserStats(uId) {
+                        let wins = 0, losses = 0, totalVotes = 0;
+                        matchSnap.forEach(mChild => {
+                            let m = mChild.val();
+                            if(m.p1Id === uId || m.p2Id === uId) {
+                                let isP1 = m.p1Id === uId;
+                                let myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
+                                let oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
+                                totalVotes += myVotes;
+                                if(myVotes >= oppVotes) wins++; else losses++;
+                            }
+                        });
+                        return { wins, losses, totalVotes };
+                    }
+
+                    Object.keys(q50).forEach(uId => {
+                        let u = q50[uId];
+                        let stats = getUserStats(uId);
+                        h50 += `
+                            <div class="item-box">
+                                <div>
+                                    <strong>${u.userName} (${u.userId})</strong><br>
+                                    <small style="color:#34d399;">Wins: ${stats.wins} | Losses: ${stats.losses}</small><br>
+                                    <small style="color:#c084fc;">High Votes: ${stats.totalVotes}</small>
+                                </div>
+                                <button class="btn btn-success" onclick="pairUsers('50', '${u.userId}', '${u.userName}')">Pair Match</button>
+                            </div>
+                        `;
+                    });
+
+                    Object.keys(q100).forEach(uId => {
+                        let u = q100[uId];
+                        let stats = getUserStats(uId);
+                        h100 += `
+                            <div class="item-box">
+                                <div>
+                                    <strong>${u.userName} (${u.userId})</strong><br>
+                                    <small style="color:#34d399;">Wins: ${stats.wins} | Losses: ${stats.losses}</small><br>
+                                    <small style="color:#c084fc;">High Votes: ${stats.totalVotes}</small>
+                                </div>
+                                <button class="btn btn-success" onclick="pairUsers('100', '${u.userId}', '${u.userName}')">Pair Match</button>
+                            </div>
+                        `;
+                    });
+
+                    list50.innerHTML = h50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
+                    list100.innerHTML = h100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
                 });
-
-                Object.keys(q100).forEach(uId => {
-                    let u = q100[uId];
-                    h100 += `<div class="item-box"><span>${u.userName} (${u.userId})</span><button class="btn btn-success" onclick="pairUsers('100', '${u.userId}', '${u.userName}')">Pair Match</button></div>`;
-                });
-
-                list50.innerHTML = h50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
-                list100.innerHTML = h100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
             });
         }
 
@@ -233,16 +273,8 @@
 
                 const matchId = 'match_' + Date.now();
                 db.ref(`matches/${matchId}`).set({
-                    p1Id: uId,
-                    p1Name: uName,
-                    p2Id: oppId,
-                    p2Name: oppName,
-                    fee: parseInt(fee),
-                    status: 'confirming',
-                    p1Confirmed: false,
-                    p2Confirmed: false,
-                    votesP1: 0,
-                    votesP2: 0,
+                    p1Id: uId, p1Name: uName, p2Id: oppId, p2Name: oppName, fee: parseInt(fee),
+                    status: 'confirming', p1Confirmed: false, p2Confirmed: false, votesP1: 0, votesP2: 0,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
 
@@ -256,29 +288,89 @@
             });
         }
 
-        function createBotMatch() {
-            const fee = parseInt(document.getElementById('bot-fee').value);
-            const botName = document.getElementById('bot-name').value.trim();
-            if(!botName) { alert("Please enter opponent name"); return; }
+        function createCustomMatch() {
+            const fee = parseInt(document.getElementById('custom-fee').value);
+            const uId = document.getElementById('custom-user-id').value.trim();
+            const botName = document.getElementById('custom-bot-name').value.trim();
 
-            const matchId = 'match_' + Date.now();
-            db.ref(`matches/${matchId}`).set({
-                p1Id: 'Player_' + Math.floor(1000 + Math.random() * 9000),
-                p1Name: botName,
-                p2Id: "Challenger_ID",
-                p2Name: "Challenger",
-                fee: fee,
-                status: 'confirming',
-                p1Confirmed: true,
-                p2Confirmed: false,
-                votesP1: 0,
-                votesP2: 0,
-                createdAt: firebase.database.ServerValue.TIMESTAMP
+            if(!uId || !botName) { alert("Please enter User ID and Opponent Name"); return; }
+
+            db.ref(`users/${uId}`).once('value', (snapshot) => {
+                if(!snapshot.exists()) { alert("User ID not found!"); return; }
+                const userData = snapshot.val();
+                const uName = userData.username || 'User';
+
+                const matchId = 'match_' + Date.now();
+                db.ref(`matches/${matchId}`).set({
+                    p1Id: uId,
+                    p1Name: uName,
+                    p2Id: 'Bot_' + Math.floor(1000 + Math.random() * 9000),
+                    p2Name: botName,
+                    fee: fee,
+                    status: 'confirming',
+                    p1Confirmed: false,
+                    p2Confirmed: true, // Bot auto-confirmed
+                    votesP1: 0,
+                    votesP2: 0,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                db.ref(`queues/${fee}/${uId}`).remove();
+                db.ref(`user_active_match/${uId}`).set({ matchId });
+
+                alert("Custom match created successfully with confirmation lobby!");
+                document.getElementById('custom-user-id').value = '';
+                document.getElementById('custom-bot-name').value = '';
             });
-            alert("Match created successfully!");
-            document.getElementById('bot-name').value = '';
         }
 
+        function loadMatches() {
+            db.ref('matches').on('value', (snapshot) => {
+                const list50 = document.getElementById('matches-50-list');
+                const list100 = document.getElementById('matches-100-list');
+                list50.innerHTML = ''; list100.innerHTML = '';
+                let html50 = '', html100 = '';
+
+                snapshot.forEach((child) => {
+                    let m = child.val();
+                    let mKey = child.key;
+                    let box = `
+                        <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                            <div style="display:flex; justify-content:space-between; width:100%;">
+                                <strong>#${mKey.substring(6)} (${m.fee} PKR)</strong>
+                                <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
+                            </div>
+                            <small>${m.p1Name} vs ${m.p2Name}</small>
+                            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                                <span style="color:#38bdf8;">Votes: ${m.votesP1||0} vs ${m.votesP2||0}</span>
+                                <div style="display:flex; gap:4px;">
+                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 1)" style="padding:2px 6px; font-size:10px;">+1 ${m.p1Name}</button>
+                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
+                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 1)" style="padding:2px 6px; font-size:10px;">+1 ${m.p2Name}</button>
+                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    if(m.fee == 100) html100 += box;
+                    else html50 += box;
+                });
+                list50.innerHTML = html50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No active matches</div>';
+                list100.innerHTML = html100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No active matches</div>';
+            });
+        }
+
+        function adminAddVote(matchId, playerKey, count) {
+            const voteField = playerKey === 'p1' ? 'votesP1' : 'votesP2';
+            db.ref(`matches/${matchId}`).transaction((match) => {
+                if (match) match[voteField] = (match[voteField] || 0) + count;
+                return match;
+            });
+        }
+
+        function deleteMatch(k) { db.ref(`matches/${k}`).remove(); alert("Match cancelled"); }
+
+        
         function loadOneDayReport() {
             const reportEl = document.getElementById('one-day-report');
             const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
@@ -376,30 +468,6 @@
             alert("Request rejected.");
         }
 
-        function loadMatches() {
-            db.ref('matches').on('value', (snapshot) => {
-                const list50 = document.getElementById('matches-50-list');
-                const list100 = document.getElementById('matches-100-list');
-                list50.innerHTML = ''; list100.innerHTML = '';
-                let html50 = '', html100 = '';
-
-                snapshot.forEach((child) => {
-                    let m = child.val();
-                    let box = `
-                        <div class="item-box">
-                            <div><strong>#${child.key.substring(6)}</strong><br><small>${m.p1Name} vs ${m.p2Name || 'Waiting'}</small><br><small style="color:#38bdf8;">Votes: ${m.votesP1||0} - ${m.votesP2||0}</small></div>
-                            <button class="btn btn-danger" onclick="deleteMatch('${child.key}')">Cancel</button>
-                        </div>
-                    `;
-                    if(m.fee == 100) html100 += box;
-                    else html50 += box;
-                });
-                list50.innerHTML = html50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No matches</div>';
-                list100.innerHTML = html100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No matches</div>';
-            });
-        }
-        function deleteMatch(k) { db.ref(`matches/${k}`).remove(); alert("Match cancelled"); }
-
         function searchUser() {
             const uId = document.getElementById('search-user-id').value.trim();
             if(!uId) { alert("Please enter User ID"); return; }
@@ -409,7 +477,7 @@
                 document.getElementById('user-info-box').classList.remove('hidden');
                 document.getElementById('u-id').innerText = uId;
                 let data = snapshot.val() || {};
-                let bal = data.balance || 1000;
+                let bal = data.balance || 0;
                 document.getElementById('u-bal').innerText = bal;
                 document.getElementById('new-user-bal').value = bal;
 
@@ -458,7 +526,7 @@
                 let h = '';
                 snapshot.forEach((child) => {
                     if(child.val().suspended) {
-                        h += `<div class="item-box"><span>${child.key}</span><button class="btn btn-success" onclick="unsuspend('${child.key}')">Unsuspend</button></div>`;
+                        h += `<div class="item-box"><span>User ID: <strong>${child.key}</strong> (${child.val().username || 'N/A'})</span><button class="btn btn-success" onclick="unsuspend('${child.key}')">Unsuspend</button></div>`;
                     }
                 });
                 cont.innerHTML = h || '<div style="color:#64748b; text-align:center;">No suspended accounts</div>';
@@ -467,7 +535,6 @@
         function closeSuspendedModal() { document.getElementById('suspended-modal').classList.add('hidden'); }
         function unsuspend(uId) { db.ref(`users/${uId}`).update({ suspended: false }); openSuspendedModal(); }
 
-        // Support Chats with Latest First / Show More pagination (4 limit initially)
         function loadSupportChatsList() {
             db.ref('support_chats').on('value', (snapshot) => {
                 const listEl = document.getElementById('support-users-list');

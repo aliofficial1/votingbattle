@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VoteBattle Arena</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
@@ -42,7 +43,7 @@
         
         .hidden { display: none !important; }
         
-        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
         .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; max-height: 90vh; overflow-y: auto; text-align: left; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
         .close-modal { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
@@ -79,7 +80,7 @@
     <header>
         <div class="logo" onclick="handleLogoClick()">VoteBattle</div>
         <div class="header-actions">
-            <button class="wallet-btn" onclick="openWalletModal()">Rs <span id="user-balance">1000</span></button>
+            <button class="wallet-btn" onclick="openWalletModal()">Rs <span id="user-balance">0</span></button>
             <button class="support-btn" onclick="openSupportModal()">
                 Support
                 <span id="support-badge" class="red-badge hidden">1</span>
@@ -176,6 +177,70 @@
             <p style="margin-top: 12px;">Share this match link with friends to get more votes!</p>
         </div>
     </main>
+
+    <!-- LOADING SPLASH MODAL -->
+    <div id="loading-modal" class="modal-overlay">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <h3 style="font-size: 16px; color: #38bdf8; font-weight: bold;">Loading VoteBattle...</h3>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL (LOGIN / SIGNUP / FORGOT) -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="auth-title" style="font-size: 16px; font-weight: bold;">Login to VoteBattle</h3>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="form-login">
+                <label style="font-size: 11px; color:#94a3b8;">Gmail</label>
+                <input type="email" id="login-email" placeholder="Enter your gmail...">
+                <label style="font-size: 11px; color:#94a3b8;">Password</label>
+                <input type="password" id="login-password" placeholder="Enter password...">
+                <button onclick="handleLogin()" class="primary-btn" style="padding: 10px; margin-bottom: 8px;">Login</button>
+                <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                    <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('signup')">Create Account</span>
+                    <span style="color: #f87171; cursor: pointer;" onclick="switchAuthView('forgot')">Forgot Password?</span>
+                </div>
+            </div>
+
+            <!-- SIGNUP FORM -->
+            <div id="form-signup" class="hidden">
+                <label style="font-size: 11px; color:#94a3b8;">Username</label>
+                <input type="text" id="signup-username" placeholder="Enter username...">
+                <label style="font-size: 11px; color:#94a3b8;">Gmail</label>
+                <input type="email" id="signup-email" placeholder="Enter gmail...">
+                <label style="font-size: 11px; color:#94a3b8;">Password</label>
+                <input type="password" id="signup-password" placeholder="Create password...">
+                <button onclick="handleSignup()" class="primary-btn" style="padding: 10px; margin-bottom: 8px;">Sign Up</button>
+                <div style="text-align: right; font-size: 11px;">
+                    <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('login')">Already have an account? Login</span>
+                </div>
+            </div>
+
+            <!-- FORGOT PASSWORD FORM -->
+            <div id="form-forgot" class="hidden">
+                <label style="font-size: 11px; color:#94a3b8;">Enter your registered Gmail</label>
+                <input type="email" id="forgot-email" placeholder="Enter gmail...">
+                <button onclick="handleForgotPassword()" class="primary-btn" style="padding: 10px; margin-bottom: 8px;">Reset Password</button>
+                <div style="text-align: right; font-size: 11px;">
+                    <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('login')">Back to Login</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUSPENDED ACCOUNT MODAL -->
+    <div id="suspended-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="text-align: center;">
+            <h2 style="color: #ef4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">Your Account Suspended</h2>
+            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">Your account has been suspended by the administration. Please contact support for assistance.</p>
+            <button onclick="openSupportModal()" class="primary-btn" style="background: #ef4444; padding: 10px; margin-bottom: 10px;">Contact Support</button>
+            <button onclick="handleLogout()" class="secondary-btn" style="background: #1e293b; border: 1px solid #334155; padding: 10px;">Logout</button>
+        </div>
+    </div>
 
     <!-- WALLET MODAL -->
     <div id="wallet-modal" class="modal-overlay hidden">
@@ -288,6 +353,8 @@
                 <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #c084fc;">Match History</h4>
                 <div id="match-history-list" style="max-height: 150px; overflow-y: auto;"></div>
             </div>
+
+            <button onclick="handleLogout()" class="secondary-btn" style="background: #ef4444; margin-top: 10px; padding: 10px;">Logout</button>
         </div>
     </div>
     <script>
@@ -301,18 +368,145 @@
             appId: "1:572901936550:web:a3918de85c585d51975367"
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.database();
 
-        let userId = localStorage.getItem('vb_user_id');
-        if(!userId) {
-            userId = Math.floor(10000000 + Math.random() * 90000000).toString();
-            localStorage.setItem('vb_user_id', userId);
-        }
-        let userName = localStorage.getItem('vb_user_name') || ('User_' + userId.substring(4));
-        let balance = 1000;
+        let userId = null;
+        let userName = '';
+        let balance = 0;
         let selectedFee = 50;
         let currentMatchId = null;
         let timerInterval = null;
+
+        // Auth state observer with Loading Splash
+        auth.onAuthStateChanged((user) => {
+            document.getElementById('loading-modal').classList.add('hidden');
+            if (user) {
+                const shortId = user.uid.substring(0, 8);
+                userId = shortId;
+                
+                // Check if suspended
+                db.ref(`users/${shortId}`).on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if(data && data.suspended) {
+                        document.getElementById('suspended-modal').classList.remove('hidden');
+                        document.getElementById('auth-modal').classList.add('hidden');
+                    } else if(data) {
+                        document.getElementById('suspended-modal').classList.add('hidden');
+                        document.getElementById('auth-modal').classList.add('hidden');
+                        balance = data.balance || 0;
+                        userName = data.username || 'User';
+                        document.getElementById('user-balance').innerText = balance;
+                        document.getElementById('profile-uid').innerText = userId;
+                        document.getElementById('new-name-input').value = userName;
+                    }
+                });
+
+                // Support Badge Listener
+                db.ref(`support_chats/${userId}`).on('value', (snapshot) => {
+                    let unreadCount = 0;
+                    snapshot.forEach((child) => {
+                        let msg = child.val();
+                        if(msg.sender === 'admin' && !msg.userRead) unreadCount++;
+                    });
+                    const badge = document.getElementById('support-badge');
+                    if(unreadCount > 0) {
+                        badge.innerText = unreadCount;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                });
+
+            } else {
+                document.getElementById('auth-modal').classList.remove('hidden');
+                switchAuthView('login');
+            }
+        });
+
+        function switchAuthView(view) {
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('form-signup').classList.add('hidden');
+            document.getElementById('form-forgot').classList.add('hidden');
+            
+            if(view === 'login') {
+                document.getElementById('auth-title').innerText = "Login to VoteBattle";
+                document.getElementById('form-login').classList.remove('hidden');
+            } else if(view === 'signup') {
+                document.getElementById('auth-title').innerText = "Create Account";
+                document.getElementById('form-signup').classList.remove('hidden');
+            } else if(view === 'forgot') {
+                document.getElementById('auth-title').innerText = "Reset Password";
+                document.getElementById('form-forgot').classList.remove('hidden');
+            }
+        }
+
+        function handleSignup() {
+            const username = document.getElementById('signup-username').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+
+            if(!username || !email || !password) {
+                alert("Please fill all fields!");
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const uid = userCredential.user.uid;
+                    const shortId = uid.substring(0, 8);
+                    db.ref(`users/${shortId}`).set({
+                        uid: shortId,
+                        username: username,
+                        email: email,
+                        balance: 0,
+                        suspended: false,
+                        createdAt: Date.now()
+                    });
+                    alert("Account created successfully!");
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if(!email || !password) {
+                alert("Please enter email and password!");
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, password)
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+
+        function handleForgotPassword() {
+            const email = document.getElementById('forgot-email').value.trim();
+            if(!email) {
+                alert("Please enter your registered Gmail!");
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    alert("Password reset email sent! Check your inbox.");
+                    switchAuthView('login');
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+
+        function handleLogout() {
+            auth.signOut().then(() => {
+                location.reload();
+            });
+        }
 
         // Admin Login 6-Tap Gesture
         let logoTapCount = 0;
@@ -358,31 +552,11 @@
             if(overlay) overlay.remove();
         }
 
-        document.getElementById('profile-uid').innerText = userId;
-        document.getElementById('user-balance').innerText = balance;
-        document.getElementById('new-name-input').value = userName;
-
-        // Support Badge (Unread Red Count)
-        db.ref(`support_chats/${userId}`).on('value', (snapshot) => {
-            let unreadCount = 0;
-            snapshot.forEach((child) => {
-                let msg = child.val();
-                if(msg.sender === 'admin' && !msg.userRead) unreadCount++;
-            });
-            const badge = document.getElementById('support-badge');
-            if(unreadCount > 0) {
-                badge.innerText = unreadCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        });
-
         function updateUserName() {
             const newName = document.getElementById('new-name-input').value.trim();
             if(!newName) { alert("Name cannot be empty"); return; }
             userName = newName;
-            localStorage.setItem('vb_user_name', userName);
+            db.ref(`users/${userId}`).update({ username: userName });
             alert("Name updated successfully!");
         }
 
@@ -521,6 +695,7 @@
                 if(amount > balance) { alert("Insufficient balance!"); return; }
 
                 balance -= amount;
+                db.ref(`users/${userId}`).update({ balance: balance });
                 document.getElementById('user-balance').innerText = balance;
 
                 db.ref(`transactions/${userId}`).push({
@@ -605,8 +780,9 @@
         }
 
         function startMatchFlow() {
-            if (balance < selectedFee) { alert("Insufficient balance!"); return; }
+            if (balance < selectedFee) { alert("Insufficient balance! Please deposit funds."); return; }
             balance -= selectedFee;
+            db.ref(`users/${userId}`).update({ balance: balance });
             document.getElementById('user-balance').innerText = balance;
             document.getElementById('wait-fee').innerText = selectedFee;
             document.getElementById('start-match-btn').classList.add('hidden');
@@ -630,6 +806,7 @@
 
         function cancelQueue() {
             balance += selectedFee;
+            db.ref(`users/${userId}`).update({ balance: balance });
             document.getElementById('user-balance').innerText = balance;
             db.ref(`queues/${selectedFee}/${userId}`).remove();
             db.ref(`user_active_match/${userId}`).remove();
