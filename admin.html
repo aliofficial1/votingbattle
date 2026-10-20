@@ -328,11 +328,12 @@
             });
         }
 
-        function loadMatches() {
+                                  function loadMatches() {
             db.ref('matches').on('value', (snapshot) => {
                 const list50 = document.getElementById('matches-50-list');
                 const list100 = document.getElementById('matches-100-list');
-                list50.innerHTML = ''; list100.innerHTML = '';
+                list50.innerHTML = ''; 
+                list100.innerHTML = '';
                 let html50 = '', html100 = '';
 
                 snapshot.forEach((child) => {
@@ -340,31 +341,70 @@
                     let mKey = child.key;
                     let p1 = m.p1Name || 'Player 1';
                     let p2 = m.p2Name || 'Player 2';
-                    let box = `
-                        <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
-                            <div style="display:flex; justify-content:space-between; width:100%;">
-                                <strong>#${mKey.substring(6)} (${m.fee} PKR)</strong>
-                                <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
+                    let statusText = m.status || 'active';
+                    
+                    let p1Conf = m.p1Confirmed ? 'Ready' : 'Waiting';
+                    let p2Conf = m.p2Confirmed ? 'Ready' : 'Waiting';
+
+                    let box = '';
+
+                    if (m.status === 'confirming' && !m.p2Confirmed) {
+                        box = `
+                            <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                                <div style="display:flex; justify-content:space-between; width:100%;">
+                                    <strong>#${mKey.substring(6)} (${m.fee} PKR) - ${statusText}</strong>
+                                    <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
+                                </div>
+                                <small>${p1} (${p1Conf}) vs ${p2} (${p2Conf})</small>
+                                <button class="btn btn-success" onclick="adminConfirmBot('${mKey}')" style="width:100%; padding:4px; font-size:11px; margin-top:4px;">Force Confirm Bot / Start Match</button>
                             </div>
-                            <small>${p1} vs ${p2}</small>
-                            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                                <span style="color:#38bdf8;">Votes: ${m.votesP1||0} vs ${m.votesP2||0}</span>
-                                <div style="display:flex; gap:4px;">
-                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p1}</button>
-                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
-                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p2}</button>
-                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
+                        `;
+                    } else {
+                        box = `
+                            <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                                <div style="display:flex; justify-content:space-between; width:100%;">
+                                    <strong>#${mKey.substring(6)} (${m.fee} PKR) - ${statusText}</strong>
+                                    <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
+                                </div>
+                                <small>${p1} vs ${p2}</small>
+                                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-top:4px;">
+                                    <span style="color:#38bdf8;">Votes: ${m.votesP1 || 0} vs ${m.votesP2 || 0}</span>
+                                    <div style="display:flex; gap:4px;">
+                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p1}</button>
+                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
+                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p2}</button>
+                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                    if(m.fee == 100) html100 += box;
-                    else html50 += box;
+                        `;
+                    }
+
+                    if(m.fee == 100) {
+                        html100 += box;
+                    } else {
+                        html50 += box;
+                    }
                 });
+                
                 list50.innerHTML = html50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No active matches</div>';
                 list100.innerHTML = html100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No active matches</div>';
             });
         }
+
+        function adminConfirmBot(matchId) {
+            db.ref(`matches/${matchId}`).update({
+                p2Confirmed: true,
+                status: 'active'
+            }, (error) => {
+                if (!error) {
+                    alert("Bot confirmed successfully! Match is now active.");
+                } else {
+                    alert("Error confirming bot!");
+                }
+            });
+        }
+
 
         function adminAddVote(matchId, playerKey, count) {
             const voteField = playerKey === 'p1' ? 'votesP1' : 'votesP2';

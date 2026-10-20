@@ -132,9 +132,12 @@
             </div>
         </div>
 
-        <!-- Confirmation Lobby Screen -->
+                <!-- Confirmation Lobby Screen -->
         <div id="screen-confirm" class="card hidden">
-            <div class="status-badge badge-waiting">Professional Battle Lobby</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div class="status-badge badge-waiting" style="margin-bottom:0;">Professional Battle Lobby</div>
+                <button onclick="shareMatchLink()" style="background: #1e293b; border: 1px solid #334155; color: #38bdf8; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold;">Share Link</button>
+            </div>
             <h1>Match Ready!</h1>
             <p>Both players must confirm within <span id="timer-display" style="color: #38bdf8; font-weight: bold;">00:20:00</span> minutes.</p>
 
@@ -152,6 +155,7 @@
             <button id="btn-confirm-join" onclick="confirmMatchJoin()" class="secondary-btn">Confirm Join Match</button>
             <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px; box-shadow:none;">Back to Home</button>
         </div>
+
 
         <!-- Live Battle Screen -->
         <div id="screen-battle" class="card hidden">
@@ -460,7 +464,7 @@
             });
         }
 
-        function openMatchById(mId) {
+                function openMatchById(mId) {
             currentMatchId = mId;
             db.ref(`matches/${mId}`).once('value', (snapshot) => {
                 let m = snapshot.val();
@@ -475,6 +479,88 @@
                 }
             });
         }
+
+        function enterConfirmationScreen(matchId) {
+            currentMatchId = matchId;
+            switchScreen('screen-confirm');
+            
+            // Button ko reset karein taake agar pehle confirm na kiya ho toh enable rahey
+            const btn = document.getElementById('btn-confirm-join');
+            btn.disabled = false;
+            btn.style.background = ""; // default gradient
+            btn.innerText = "Confirm Join Match";
+
+            startCountdownTimer(1200);
+
+            db.ref(`matches/${matchId}`).on('value', (snapshot) => {
+                const match = snapshot.val();
+                if(!match) return;
+                document.getElementById('p1-name').innerText = match.p1Name || 'Player 1';
+                document.getElementById('p2-name').innerText = match.p2Name || 'Player 2';
+                
+                if(match.p1Confirmed) { 
+                    document.getElementById('p1-badge').className = "status-badge badge-confirmed"; 
+                    document.getElementById('p1-badge').innerText = "Confirmed"; 
+                } else { 
+                    document.getElementById('p1-badge').className = "status-badge badge-waiting"; 
+                    document.getElementById('p1-badge').innerText = "Waiting..."; 
+                }
+
+                if(match.p2Confirmed) { 
+                    document.getElementById('p2-badge').className = "status-badge badge-confirmed"; 
+                    document.getElementById('p2-badge').innerText = "Confirmed"; 
+                } else { 
+                    document.getElementById('p2-badge').className = "status-badge badge-waiting"; 
+                    document.getElementById('p2-badge').innerText = "Waiting..."; 
+                }
+
+                if(match.p1Confirmed && match.p2Confirmed) {
+                    enterBattleScreen(match);
+                }
+            });
+        }
+
+        function startCountdownTimer(durationSeconds) {
+            let timer = durationSeconds, minutes, seconds;
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                minutes = parseInt((timer % 3600) / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                const timerEl = document.getElementById('timer-display');
+                if(timerEl) timerEl.innerText = "00:" + minutes + ":" + seconds;
+                
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    alert("Match cancelled due to 20-minute timeout!");
+                    db.ref(`matches/${currentMatchId}`).remove();
+                    switchScreen('screen-home');
+                }
+            }, 1000);
+        }
+
+        function confirmMatchJoin() {
+            db.ref(`matches/${currentMatchId}`).once('value', (snapshot) => {
+                const match = snapshot.val();
+                if(!match) return;
+                
+                // Check karein ke user p1 hai ya p2
+                const field = (match.p1Id === userId) ? 'p1Confirmed' : 'p2Confirmed';
+                
+                db.ref(`matches/${currentMatchId}`).update({ [field]: true }, (error) => {
+                    if(!error) {
+                        const btn = document.getElementById('btn-confirm-join');
+                        btn.disabled = true;
+                        btn.style.background = "#1e293b";
+                        btn.innerText = "Confirmed / Waiting for Opponent...";
+                    }
+                });
+            });
+        }
+
 
         function switchAuthView(view) {
             document.getElementById('form-login').classList.add('hidden');
