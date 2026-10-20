@@ -226,7 +226,6 @@
                         return { wins, losses, totalVotes };
                     }
 
-                    // Populate 50 PKR Queue
                     Object.keys(q50).forEach(uId => {
                         let u = q50[uId];
                         let uName = u.userName || 'User';
@@ -246,7 +245,6 @@
                         userSelect.innerHTML += `<option value="${uId}">${uName} (${uId}) - 50 PKR</option>`;
                     });
 
-                    // Populate 100 PKR Queue
                     Object.keys(q100).forEach(uId => {
                         let u = q100[uId];
                         let uName = u.userName || 'User';
@@ -429,7 +427,7 @@
                         <div class="item-box">
                             <div><strong>User: ${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>From Acc: ${d.senderAcc || 'N/A'} | TID: ${d.tid || 'N/A'}</small></div>
                             <div>
-                                <button class="btn btn-success" onclick="approveTx('${d.uId}', '${d.txKey}', 'Deposit')">Approve</button>
+                                <button class="btn btn-success" onclick="approveTx('${d.uId}', '${d.txKey}', 'Deposit', ${d.amount})">Approve</button>
                                 <button class="btn btn-danger" onclick="rejectTx('${d.uId}', '${d.txKey}')">Reject</button>
                             </div>
                         </div>
@@ -463,7 +461,7 @@
                         <div class="item-box">
                             <div><strong>User: ${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount} (${w.method})</span><br><small>Name: ${w.accName} | Acc: ${w.account}</small></div>
                             <div>
-                                <button class="btn btn-success" onclick="approveTx('${w.uId}', '${w.txKey}', 'Withdrawal')">Approve</button>
+                                <button class="btn btn-success" onclick="approveTx('${w.uId}', '${w.txKey}', 'Withdrawal', ${w.amount})">Approve</button>
                                 <button class="btn btn-danger" onclick="rejectTx('${w.uId}', '${w.txKey}')">Reject</button>
                             </div>
                         </div>
@@ -474,10 +472,27 @@
             });
         }
 
-        function approveTx(uId, txKey, type) {
-            db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' });
-            alert(`${type} approved successfully!`);
+        function approveTx(uId, txKey, type, amount) {
+            db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' }, (error) => {
+                if(error) {
+                    alert("Error approving transaction!");
+                    return;
+                }
+                if(type === 'Deposit') {
+                    db.ref(`users/${uId}`).once('value', (snapshot) => {
+                        let userData = snapshot.val() || {};
+                        let currentBal = parseFloat(userData.balance || 0);
+                        let newBal = currentBal + parseFloat(amount);
+                        db.ref(`users/${uId}`).update({ balance: newBal }, (err) => {
+                            if(!err) alert(`Deposit approved! Rs. ${amount} successfully added to user balance.`);
+                        });
+                    });
+                } else {
+                    alert("Withdrawal approved successfully!");
+                }
+            });
         }
+
         function rejectTx(uId, txKey) {
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Rejected' });
             alert("Request rejected.");
