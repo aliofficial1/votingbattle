@@ -3,74 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoteBattle Arena</title>
+    <title>VoteBattle Arena - Professional Edition</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #020617; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
         
-        header { background-color: #0f172a; border-bottom: 1px solid #1e293b; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
-        .logo { font-weight: 900; font-size: 18px; background: linear-gradient(to right, #38bdf8, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; user-select: none; }
+        header { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid #1e293b; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .logo { font-weight: 900; font-size: 18px; background: linear-gradient(135deg, #38bdf8, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; user-select: none; letter-spacing: 0.5px; }
         
-        .header-actions { display: flex; align-items: center; gap: 6px; }
-        .wallet-btn { background: #1e293b; padding: 6px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #38bdf8; border: 1px solid #334155; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .wallet-btn { background: #1e293b; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #38bdf8; border: 1px solid #334155; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s; }
+        .wallet-btn:hover { border-color: #38bdf8; }
         .support-btn { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; position: relative; }
         .profile-btn { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
 
-        .red-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 5px; font-size: 9px; font-weight: bold; }
+        .red-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 9px; font-weight: bold; }
 
-        main { flex: 1; max-width: 450px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; justify-content: center; }
-        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 16px; text-align: center; }
-        h1 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+        main { flex: 1; max-width: 440px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; justify-content: center; }
+        
+        .card { background: linear-gradient(145deg, #0f172a 0%, #090d16 100%); border: 1px solid #1e293b; border-radius: 20px; padding: 22px; box-shadow: 0 12px 30px rgba(0,0,0,0.6); margin-bottom: 16px; text-align: center; position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #38bdf8, #8b5cf6); }
+
+        h1 { font-size: 20px; font-weight: 800; margin-bottom: 6px; color: #fff; }
         p { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 16px; }
         
         .fee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        .fee-btn { padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; border: 1px solid #1e293b; background: #020617; color: #94a3b8; text-align: center; transition: 0.2s; }
-        .fee-btn.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+        .fee-btn { padding: 14px; border-radius: 14px; font-weight: bold; cursor: pointer; border: 1px solid #1e293b; background: #020617; color: #94a3b8; text-align: center; transition: all 0.2s ease; font-size: 14px; }
+        .fee-btn.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.12); color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.25); transform: translateY(-1px); }
         
-        .prize-info { background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-bottom: 16px; }
+        .prize-info { background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 16px; display: flex; justify-content: center; align-items: center; gap: 6px; }
 
-        .primary-btn { width: 100%; background: linear-gradient(to right, #0284c7, #7c3aed); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
-        .secondary-btn { width: 100%; background: #059669; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .primary-btn { width: 100%; background: linear-gradient(135deg, #0284c7 0%, #7c3aed 100%); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); transition: 0.2s; }
+        .primary-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .secondary-btn { width: 100%; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: 0.2s; }
         
-        input, select { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none; }
-        input:focus, select:focus { border-color: #38bdf8; }
+        input, select { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 13px; margin-bottom: 10px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.2); }
         
         .search-box { display: flex; gap: 8px; }
-        .go-btn { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .go-btn { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 0 18px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .go-btn:hover { background: #334155; color: #fff; }
         
         .hidden { display: none !important; }
         
-        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
-        .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; max-height: 90vh; overflow-y: auto; text-align: left; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; width: 100%; max-width: 380px; padding: 22px; max-height: 90vh; overflow-y: auto; text-align: left; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
-        .close-modal { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
+        .close-modal { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; transition: color 0.2s; }
+        .close-modal:hover { color: #fff; }
         
         .tab-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 16px; }
-        .tab-btn { background: #020617; border: 1px solid #1e293b; color: #94a3b8; padding: 8px 4px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; text-align: center; }
+        .tab-btn { background: #020617; border: 1px solid #1e293b; color: #94a3b8; padding: 8px 4px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 11px; text-align: center; transition: 0.2s; }
         .tab-btn.active { background: #38bdf8; color: #020617; border-color: #38bdf8; font-weight: 900; }
 
-        .info-box { background: #020617; border: 1px solid #334155; padding: 10px; border-radius: 8px; font-size: 11px; color: #38bdf8; margin-bottom: 10px; line-height: 1.4; }
-        .history-item { background: #020617; border: 1px solid #1e293b; padding: 10px; border-radius: 10px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .status-tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-        .status-pending { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .info-box { background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); padding: 10px; border-radius: 10px; font-size: 11px; color: #38bdf8; margin-bottom: 10px; line-height: 1.4; }
+        .history-item { background: #020617; border: 1px solid #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .status-tag { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        .status-pending { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
 
-        .chat-box { background: #020617; border: 1px solid #1e293b; border-radius: 10px; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .chat-msg { padding: 8px 12px; border-radius: 8px; font-size: 12px; max-width: 80%; }
-        .chat-user { background: #1e293b; align-self: flex-end; color: #f8fafc; }
-        .chat-admin { background: #7c3aed; align-self: flex-start; color: #fff; }
+        .chat-box { background: #020617; border: 1px solid #1e293b; border-radius: 12px; height: 200px; overflow-y: auto; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-msg { padding: 8px 12px; border-radius: 10px; font-size: 12px; max-width: 80%; }
+        .chat-user { background: #1e293b; align-self: flex-end; color: #f8fafc; border-bottom-right-radius: 2px; }
+        .chat-admin { background: #7c3aed; align-self: flex-start; color: #fff; border-bottom-left-radius: 2px; }
         .seen-status { font-size: 9px; color: #94a3b8; text-align: right; margin-top: 2px; }
 
-        .spinner { width: 35px; height: 35px; border: 3px solid rgba(56, 189, 248, 0.2); border-top: 3px solid #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px auto; }
+        .spinner { width: 36px; height: 36px; border: 3px solid rgba(56, 189, 248, 0.2); border-top: 3px solid #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 12px; }
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 12px; letter-spacing: 0.5px; }
         .badge-waiting { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
         .badge-confirmed { background: rgba(5, 150, 105, 0.15); color: #34d399; border: 1px solid rgba(5, 150, 105, 0.3); }
+        
         .players-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
-        .player-box { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; text-align: center; }
+        .player-box { background: #020617; border: 1px solid #1e293b; border-radius: 14px; padding: 14px; text-align: center; }
+
+        /* Professional Active Match Cards */
+        .pro-match-card { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s; }
+        .pro-match-card:hover { border-color: #334155; }
     </style>
 </head>
 <body>
@@ -87,104 +99,103 @@
     </header>
 
     <main>
-        <!-- Home Card -->
+        <!-- Home Screen -->
         <div id="screen-home" class="card">
-            <h1>Head-to-Head Voting Battle</h1>
-            <p>Choose your entry fee, find an opponent, get paired, and win votes to claim the prize pool!</p>
+            <h1>Head-to-Head Arena</h1>
+            <p>Select your entry fee, match with an opponent in real-time, and win votes to claim cash!</p>
             
-            <div style="text-align: left; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Select Entry Fee (PKR)</div>
+            <div style="text-align: left; margin-bottom: 6px; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Select Entry Fee</div>
             <div class="fee-grid">
                 <button onclick="setEntryFee(50)" id="fee-btn-50" class="fee-btn active">Rs. 50</button>
                 <button onclick="setEntryFee(100)" id="fee-btn-100" class="fee-btn">Rs. 100</button>
             </div>
             
-            <div class="prize-info" id="prize-display">Winning Prize: Rs. 95</div>
+            <div class="prize-info" id="prize-display">⚡ Winning Prize: Rs. 95</div>
 
-            <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Start Match ➔</button>
+            <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Find Opponent / Start Match ➔</button>
 
-            <div style="margin-top: 20px; text-align: left; border-top: 1px solid #1e293b; padding-top: 16px;">
-                <div style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Join via Match Link/ID</div>
+            <!-- Active / Started Matches -->
+            <div style="margin-top: 18px; text-align: left; border-top: 1px solid #1e293b; padding-top: 14px;">
+                <div style="font-size: 10px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Your Started / Active Matches (Max 2)</div>
+                <div id="user-started-matches-list" style="max-height: 170px; overflow-y: auto;">
+                    <div style="color: #64748b; font-size: 11px; text-align: center; padding: 8px;">No active matches found</div>
+                </div>
+            </div>
+
+            <!-- Join via Match ID (Moved to Bottom) -->
+            <div style="margin-top: 16px; text-align: left; border-top: 1px solid #1e293b; padding-top: 14px;">
+                <div style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Join via Match Link / ID</div>
                 <div class="search-box">
                     <input type="text" id="search-match-id" placeholder="Enter Match ID..." style="margin-bottom:0;">
                     <button class="go-btn" onclick="searchMatch()">Go</button>
                 </div>
             </div>
-
-            <!-- Started Matches List (Directly Below Search Link) -->
-            <div style="margin-top: 20px; text-align: left; border-top: 1px solid #1e293b; padding-top: 16px;">
-                <div style="font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px;">Your Started / Active Matches (Max 2)</div>
-                <div id="user-started-matches-list" style="max-height: 180px; overflow-y: auto;">
-                    <div style="color: #64748b; font-size: 11px; text-align: center;">No active matches found</div>
-                </div>
-            </div>
         </div>
 
-        <!-- Confirmation Screen -->
+        <!-- Confirmation Lobby Screen -->
         <div id="screen-confirm" class="card hidden">
-            <div class="status-badge badge-waiting">Action Required: Confirm Join</div>
-            <h1>Match Found!</h1>
-            <p>Both players must confirm within <span id="timer-display" style="color: #38bdf8; font-weight: bold;">00:20:00</span> minutes or the match will be cancelled.</p>
+            <div class="status-badge badge-waiting">Professional Battle Lobby</div>
+            <h1>Match Ready!</h1>
+            <p>Both players must confirm within <span id="timer-display" style="color: #38bdf8; font-weight: bold;">00:20:00</span> minutes.</p>
 
             <div class="players-grid">
                 <div class="player-box">
-                    <div style="font-weight: bold; margin-bottom: 4px;" id="p1-name">You</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;" id="p1-name">You</div>
                     <span id="p1-badge" class="status-badge badge-waiting">Waiting...</span>
                 </div>
                 <div class="player-box">
-                    <div style="font-weight: bold; margin-bottom: 4px;" id="p2-name">Opponent</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;" id="p2-name">Opponent</div>
                     <span id="p2-badge" class="status-badge badge-waiting">Waiting...</span>
                 </div>
             </div>
 
             <button id="btn-confirm-join" onclick="confirmMatchJoin()" class="secondary-btn">Confirm Join Match</button>
-            <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px;">Back to Home</button>
+            <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px; box-shadow:none;">Back to Home</button>
         </div>
 
-        <!-- Battle Screen -->
+        <!-- Live Battle Screen -->
         <div id="screen-battle" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
-                <span id="battle-match-id" style="color: #38bdf8; font-family: monospace;">ID: #---</span>
+                <span id="battle-match-id" style="color: #38bdf8; font-family: monospace; font-weight: bold;">ID: #---</span>
                 <div style="display: flex; gap: 6px;">
-                    <button onclick="shareMatchLink()" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">Share Link</button>
-                    <button onclick="switchScreen('screen-home')" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">Home</button>
+                    <button onclick="shareMatchLink()" style="background: #1e293b; border: 1px solid #334155; color: #38bdf8; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold;">Share Link</button>
+                    <button onclick="switchScreen('screen-home')" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 10px;">Home</button>
                 </div>
             </div>
 
             <h1>Voting Battle Live!</h1>
+            <p style="margin-bottom: 10px;">Collect votes to win the battle pool!</p>
 
             <div class="players-grid">
                 <div class="player-box" style="display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
-                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;" id="battle-p1-name">Player A</div>
-                        <div style="background: #020617; padding: 8px; border-radius: 8px; margin-bottom: 8px; border:1px solid #1e293b;">
-                            <span style="font-size: 10px; color: #94a3b8; display: block;">Votes</span>
-                            <span id="votes-p1" style="font-size: 18px; font-weight: 900; color: #38bdf8;">0</span>
+                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color:#cbd5e1;" id="battle-p1-name">Player A</div>
+                        <div style="background: #020617; padding: 8px; border-radius: 10px; margin-bottom: 8px; border:1px solid #1e293b;">
+                            <span style="font-size: 9px; color: #64748b; display: block; text-transform:uppercase;">Votes</span>
+                            <span id="votes-p1" style="font-size: 20px; font-weight: 900; color: #38bdf8;">0</span>
                         </div>
                     </div>
-                    <button onclick="castVote('p1')" style="background: #38bdf8; color: #020617; font-weight: 900; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">Vote A</button>
+                    <button onclick="castVote('p1')" style="background: #38bdf8; color: #020617; font-weight: 900; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 12px; transition:0.2s;">Vote A</button>
                 </div>
 
                 <div class="player-box" style="display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
-                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;" id="battle-p2-name">Player B</div>
-                        <div style="background: #020617; padding: 8px; border-radius: 8px; margin-bottom: 8px; border:1px solid #1e293b;">
-                            <span style="font-size: 10px; color: #94a3b8; display: block;">Votes</span>
-                            <span id="votes-p2" style="font-size: 18px; font-weight: 900; color: #c084fc;">0</span>
+                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color:#cbd5e1;" id="battle-p2-name">Player B</div>
+                        <div style="background: #020617; padding: 8px; border-radius: 10px; margin-bottom: 8px; border:1px solid #1e293b;">
+                            <span style="font-size: 9px; color: #64748b; display: block; text-transform:uppercase;">Votes</span>
+                            <span id="votes-p2" style="font-size: 20px; font-weight: 900; color: #c084fc;">0</span>
                         </div>
                     </div>
-                    <button onclick="castVote('p2')" style="background: #8b5cf6; color: #fff; font-weight: 900; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">Vote B</button>
+                    <button onclick="castVote('p2')" style="background: #8b5cf6; color: #fff; font-weight: 900; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 12px; transition:0.2s;">Vote B</button>
                 </div>
             </div>
-
-            <p style="margin-top: 12px;">Share this match link with friends to get more votes!</p>
         </div>
     </main>
-
-    <!-- LOADING SPLASH MODAL -->
+    <!-- LOADING SPLASH -->
     <div id="loading-modal" class="modal-overlay">
         <div style="text-align: center;">
             <div class="spinner"></div>
-            <h3 style="font-size: 16px; color: #38bdf8; font-weight: bold;">Loading VoteBattle...</h3>
+            <h3 style="font-size: 15px; color: #38bdf8; font-weight: bold;">Loading VoteBattle...</h3>
         </div>
     </div>
 
@@ -192,14 +203,14 @@
     <div id="auth-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="auth-title" style="font-size: 16px; font-weight: bold;">Login to VoteBattle</h3>
+                <h3 id="auth-title" style="font-size: 16px; font-weight: bold; color:#38bdf8;">Login to VoteBattle</h3>
             </div>
             <div id="form-login">
                 <label style="font-size: 11px; color:#94a3b8;">Gmail</label>
                 <input type="email" id="login-email" placeholder="Enter your gmail...">
                 <label style="font-size: 11px; color:#94a3b8;">Password</label>
                 <input type="password" id="login-password" placeholder="Enter password...">
-                <button onclick="handleLogin()" class="primary-btn" style="padding: 10px; margin-bottom: 8px;">Login</button>
+                <button onclick="handleLogin()" class="primary-btn" style="padding: 12px; margin-bottom: 10px;">Login</button>
                 <div style="display: flex; justify-content: space-between; font-size: 11px;">
                     <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('signup')">Create Account</span>
                     <span style="color: #f87171; cursor: pointer;" onclick="switchAuthView('forgot')">Forgot Password?</span>
@@ -212,15 +223,15 @@
                 <input type="email" id="signup-email" placeholder="Enter gmail...">
                 <label style="font-size: 11px; color:#94a3b8;">Password</label>
                 <input type="password" id="signup-password" placeholder="Create password...">
-                <button onclick="handleSignup()" class="primary-btn" style="padding: 10px; margin-bottom: 8px;">Sign Up</button>
+                <button onclick="handleSignup()" class="primary-btn" style="padding: 12px; margin-bottom: 10px;">Sign Up</button>
                 <div style="text-align: right; font-size: 11px;">
                     <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('login')">Already have an account? Login</span>
                 </div>
             </div>
             <div id="form-forgot" class="hidden">
-                <label style="font-size: 11px; color:#94a3b8;">Enter your registered Gmail</label>
+                <label style="font-size: 11px; color:#94a3b8;">Registered Gmail</label>
                 <input type="email" id="forgot-email" placeholder="Enter gmail...">
-                <button onclick="handleForgotPassword()" class="primary-btn" style="padding: 10px; margin-bottom: 8px;">Reset Password</button>
+                <button onclick="handleForgotPassword()" class="primary-btn" style="padding: 12px; margin-bottom: 10px;">Reset Password</button>
                 <div style="text-align: right; font-size: 11px;">
                     <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('login')">Back to Login</span>
                 </div>
@@ -231,10 +242,10 @@
     <!-- SUSPENDED MODAL -->
     <div id="suspended-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align: center;">
-            <h2 style="color: #ef4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">Your Account Suspended</h2>
-            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">Your account has been suspended by the administration.</p>
-            <button onclick="openSupportModal()" class="primary-btn" style="background: #ef4444; padding: 10px; margin-bottom: 10px;">Contact Support</button>
-            <button onclick="handleLogout()" class="secondary-btn" style="background: #1e293b; border: 1px solid #334155; padding: 10px;">Logout</button>
+            <h2 style="color: #ef4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">Account Suspended</h2>
+            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">Your account has been suspended by administration.</p>
+            <button onclick="openSupportModal()" class="primary-btn" style="background: #ef4444; padding: 12px; margin-bottom: 10px;">Contact Support</button>
+            <button onclick="handleLogout()" class="secondary-btn" style="background: #1e293b; border: 1px solid #334155; padding: 12px;">Logout</button>
         </div>
     </div>
 
@@ -242,7 +253,7 @@
     <div id="wallet-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="font-size: 16px; font-weight: bold;">Wallet & Transactions</h3>
+                <h3 style="font-size: 16px; font-weight: bold; color:#38bdf8;">Wallet & Transactions</h3>
                 <button class="close-modal" onclick="closeWalletModal()">✕</button>
             </div>
             <div class="tab-grid-3">
@@ -264,27 +275,21 @@
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="dep-amount" placeholder="Enter amount...">
                 <label style="font-size: 11px; color:#94a3b8;">Transaction ID / TID</label>
-                <input type="text" id="dep-tid" placeholder="Enter 11-digit Transaction ID...">
-                <button onclick="submitDeposit()" class="primary-btn" style="padding: 10px;">Submit Deposit Request</button>
+                <input type="text" id="dep-tid" placeholder="Enter 11-digit TID...">
+                <button onclick="submitDeposit()" class="primary-btn" style="padding: 12px;">Submit Deposit</button>
             </div>
             <div id="wallet-withdraw-section" class="hidden">
-                <label style="font-size: 11px; color:#94a3b8;">Select Method</label>
-                <select id="wd-method">
-                    <option value="EasyPaisa">EasyPaisa</option>
-                    <option value="JazzCash">JazzCash</option>
-                    <option value="Binance ID">Binance ID</option>
-                    <option value="USDT Wallet">USDT Wallet</option>
-                </select>
-                <label style="font-size: 11px; color:#94a3b8;">Account Holder Name</label>
-                <input type="text" id="wd-name" placeholder="Enter account holder name...">
-                <label style="font-size: 11px; color:#94a3b8;">Account Number / Wallet Details</label>
-                <input type="text" id="wd-account" placeholder="Account Number or ID...">
+                <label style="font-size: 11px; color:#94a3b8;">Method</label>
+                <select id="wd-method"><option value="EasyPaisa">EasyPaisa</option></select>
+                <label style="font-size: 11px; color:#94a3b8;">Account Name</label>
+                <input type="text" id="wd-name" placeholder="Enter account name...">
+                <label style="font-size: 11px; color:#94a3b8;">Account Number</label>
+                <input type="text" id="wd-account" placeholder="Enter account number...">
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="wd-amount" placeholder="Enter amount...">
-                <button onclick="submitWithdraw()" class="primary-btn" style="padding: 10px;">Submit Withdrawal Request</button>
+                <button onclick="submitWithdraw()" class="primary-btn" style="padding: 12px;">Request Withdrawal</button>
             </div>
             <div id="wallet-status-section" class="hidden">
-                <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #38bdf8;">Recent Status (Last 20 Days)</h4>
                 <div id="transaction-list" style="max-height: 200px; overflow-y: auto;"></div>
             </div>
         </div>
@@ -294,13 +299,13 @@
     <div id="support-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="font-size: 16px; font-weight: bold;">Support Chat</h3>
+                <h3 style="font-size: 16px; font-weight: bold; color:#38bdf8;">Support Chat</h3>
                 <button class="close-modal" onclick="closeSupportModal()">✕</button>
             </div>
-            <div id="support-chat-box" class="chat-box" style="background: #020617; border: 1px solid #1e293b; border-radius: 10px; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;"></div>
+            <div id="support-chat-box" class="chat-box"></div>
             <div style="display: flex; gap: 8px;">
                 <input type="text" id="support-input" placeholder="Type your message..." style="margin-bottom:0;">
-                <button onclick="sendSupportMessage()" class="go-btn" style="padding: 0 12px;">Send</button>
+                <button onclick="sendSupportMessage()" class="go-btn" style="padding: 0 16px;">Send</button>
             </div>
         </div>
     </div>
@@ -309,29 +314,29 @@
     <div id="profile-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="font-size: 16px; font-weight: bold;">User Profile</h3>
+                <h3 style="font-size: 16px; font-weight: bold; color:#38bdf8;">User Profile</h3>
                 <button class="close-modal" onclick="closeProfileModal()">✕</button>
             </div>
-            <div style="background: #020617; border: 1px solid #1e293b; padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center;">
-                <span style="font-size: 11px; color: #94a3b8; display: block;">Your 8-Digit User ID</span>
-                <span id="profile-uid" style="font-size: 18px; font-weight: 900; color: #38bdf8; font-family: monospace;">--------</span>
+            <div style="background: #020617; border: 1px solid #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 12px; text-align: center;">
+                <span style="font-size: 10px; color: #64748b; display: block; text-transform: uppercase;">Your 8-Digit User ID</span>
+                <span id="profile-uid" style="font-size: 16px; font-weight: 900; color: #38bdf8; font-family: monospace;">--------</span>
             </div>
             <div style="margin-bottom: 12px;">
-                <label style="font-size: 11px; color:#94a3b8;">Change Your Name</label>
+                <label style="font-size: 11px; color:#94a3b8;">Change Display Name</label>
                 <div style="display: flex; gap: 8px; margin-top: 4px;">
                     <input type="text" id="new-name-input" placeholder="Enter new name..." style="margin-bottom:0;">
-                    <button onclick="updateUserName()" class="go-btn" style="padding: 0 12px;">Save</button>
+                    <button onclick="updateUserName()" class="go-btn" style="padding: 0 16px;">Save</button>
                 </div>
             </div>
-            <button onclick="toggleMatchHistory()" class="primary-btn" style="padding: 10px; font-size: 12px; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155;">View Match History (Last 15 Days)</button>
+            <button onclick="toggleMatchHistory()" class="primary-btn" style="padding: 12px; font-size: 12px; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155; box-shadow:none;">View Match History (15 Days)</button>
             <div id="match-history-container" class="hidden">
-                <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #c084fc;">Match History</h4>
-                <div id="match-history-list" style="max-height: 150px; overflow-y: auto;"></div>
+                <h4 style="font-size: 11px; font-weight: bold; margin-bottom: 8px; color: #c084fc; text-transform:uppercase;">Match History</h4>
+                <div id="match-history-list" style="max-height: 140px; overflow-y: auto;"></div>
             </div>
-            <button onclick="handleLogout()" class="secondary-btn" style="background: #ef4444; margin-top: 10px; padding: 10px;">Logout</button>
+            <button onclick="handleLogout()" class="secondary-btn" style="background: #ef4444; margin-top: 6px; padding: 12px; box-shadow:none;">Logout Account</button>
         </div>
     </div>
-<script>
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDGu1r9uSKymwTH_5nQIwW8qKC9TYCrPow",
             authDomain: "votingbattle.firebaseapp.com",
@@ -392,7 +397,7 @@
                 loadUserStartedMatches();
 
             } else {
-                document.getElementById('auth-modal').classList.add('hidden');
+                document.getElementById('auth-modal').classList.remove('hidden');
                 switchAuthView('login');
             }
         });
@@ -411,16 +416,20 @@
                         if(m.p1Id === userId || m.p2Id === userId) {
                             activeCount++;
                             let shareUrl = window.location.origin + window.location.pathname + "?match=" + mId;
-                            let statusText = (m.p1Confirmed && m.p2Confirmed) ? '<span style="color:#34d399;">Live Battle</span>' : '<span style="color:#fb7185;">Pending Confirm (20m)</span>';
+                            let isLive = (m.p1Confirmed && m.p2Confirmed);
+                            let statusBadgeHtml = isLive 
+                                ? '<span style="color:#34d399; font-weight:bold;">Live Battle</span>' 
+                                : '<span style="color:#fb7185; font-weight:bold;">Confirm (20m)</span>';
+                            
                             html += `
-                                <div style="background:#020617; border:1px solid #1e293b; padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                <div class="pro-match-card">
                                     <div>
-                                        <strong style="color:#38bdf8; font-size:11px;">#${mId.substring(6)} (${m.fee} PKR)</strong> - ${statusText}<br>
+                                        <strong style="color:#38bdf8; font-size:11px;">#${mId.substring(6)} (${m.fee} PKR)</strong> - ${statusBadgeHtml}<br>
                                         <small style="color:#94a3b8; font-size:10px;">${m.p1Name} vs ${m.p2Name}</small>
                                     </div>
                                     <div style="display:flex; gap:4px;">
-                                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); alert('Match link copied!');" style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:4px 6px; border-radius:6px; font-size:10px; cursor:pointer;">Copy Link</button>
-                                        <button onclick="openMatchById('${mId}')" style="background:#059669; border:none; color:#fff; padding:4px 6px; border-radius:6px; font-size:10px; cursor:pointer;">Open</button>
+                                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); alert('Match link copied!');" style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:5px 8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">Copy</button>
+                                        <button onclick="openMatchById('${mId}')" style="background:#059669; border:none; color:#fff; padding:5px 10px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">Open</button>
                                     </div>
                                 </div>
                             `;
@@ -433,11 +442,12 @@
                             if(q.userId === userId) {
                                 activeCount++;
                                 html += `
-                                    <div style="background:#020617; border:1px solid #334155; padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                    <div class="pro-match-card" style="border-color:#334155;">
                                         <div>
                                             <strong style="color:#fb7185; font-size:11px;">In Queue (${q.fee} PKR)</strong><br>
-                                            <small style="color:#94a3b8; font-size:10px;">Waiting for admin to pair...</small>
+                                            <small style="color:#94a3b8; font-size:10px;">Searching for opponent...</small>
                                         </div>
+                                        <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 8px; border-radius:4px; font-size:10px; font-weight:bold;">SEARCHING</span>
                                     </div>
                                 `;
                             }
@@ -445,7 +455,7 @@
                     });
 
                     window.currentUserActiveMatchesCount = activeCount;
-                    listEl.innerHTML = html || '<div style="color:#64748b; font-size:11px; text-align:center;">No active matches found</div>';
+                    listEl.innerHTML = html || '<div style="color:#64748b; font-size:11px; text-align:center; padding:8px;">No active matches found</div>';
                 });
             });
         }
@@ -631,7 +641,7 @@
             selectedFee = fee;
             document.getElementById('fee-btn-50').className = "fee-btn" + (fee === 50 ? " active" : "");
             document.getElementById('fee-btn-100').className = "fee-btn" + (fee === 100 ? " active" : "");
-            const prizeText = fee === 50 ? "Winning Prize: Rs. 95" : "Winning Prize: Rs. 190";
+            const prizeText = fee === 50 ? "⚡ Winning Prize: Rs. 95" : "⚡ Winning Prize: Rs. 190";
             document.getElementById('prize-display').innerText = prizeText;
         }
 
@@ -650,7 +660,8 @@
             else if(method === 'Binance ID') box.innerHTML = "Send amount to Binance Pay ID Name: <b>VoteBattle</b> | ID: <b>98765432</b>";
             else box.innerHTML = "Send USDT to TRC20 Address: <b>TXYZ123456789ABCDEFAWESOMESWAP</b>";
         }
-function switchWalletTab(tab) {
+
+        function switchWalletTab(tab) {
             document.getElementById('tab-deposit-btn').className = "tab-btn" + (tab === 'deposit' ? " active" : "");
             document.getElementById('tab-withdraw-btn').className = "tab-btn" + (tab === 'withdraw' ? " active" : "");
             document.getElementById('tab-status-btn').className = "tab-btn" + (tab === 'status' ? " active" : "");
@@ -672,7 +683,7 @@ function switchWalletTab(tab) {
                 const amount = parseFloat(document.getElementById('dep-amount').value);
                 const tid = document.getElementById('dep-tid').value.trim();
                 
-                if(!amount || amount <= 0 || !tid || !senderAcc) { alert("Please fill all deposit details correctly (Sender Account, Amount & TID)"); return; }
+                if(!amount || amount <= 0 || !tid || !senderAcc) { alert("Please fill all deposit details correctly"); return; }
 
                 db.ref(`transactions/${userId}`).push({
                     type: 'Deposit', method, senderAcc, amount, tid, status: 'Pending', timestamp: Date.now()
@@ -807,7 +818,6 @@ function switchWalletTab(tab) {
             switchScreen('screen-confirm');
             document.getElementById('battle-match-id').innerText = `ID: #${matchId}`;
             
-            // 20 minutes timer (1200 seconds)
             startCountdownTimer(1200);
 
             db.ref(`matches/${matchId}`).on('value', (snapshot) => {

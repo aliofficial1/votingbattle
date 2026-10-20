@@ -273,7 +273,6 @@
                         createdAt: firebase.database.ServerValue.TIMESTAMP
                     });
 
-                    // Remove from queue
                     snap.forEach(c => {
                         if(c.val().userId === uId || c.val().userId === oppId) {
                             db.ref(`queues/${fee}/${c.key}`).remove();
@@ -300,6 +299,7 @@
                 const uName = userData.username || 'User';
 
                 const matchId = 'match_' + Date.now();
+                // Bot / Custom match sent to confirmation lobby with p2Confirmed: false
                 db.ref(`matches/${matchId}`).set({
                     p1Id: uId,
                     p1Name: uName,
@@ -308,13 +308,12 @@
                     fee: fee,
                     status: 'confirming',
                     p1Confirmed: false,
-                    p2Confirmed: true, // Bot / Custom opponent auto-confirmed
+                    p2Confirmed: false, 
                     votesP1: 0,
                     votesP2: 0,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
 
-                // Remove user from queue
                 db.ref(`queues/${fee}`).once('value', (qSnap) => {
                     qSnap.forEach(c => {
                         if(c.val().userId === uId) db.ref(`queues/${fee}/${c.key}`).remove();
@@ -323,7 +322,7 @@
 
                 db.ref(`user_active_match/${uId}`).set({ matchId });
 
-                alert("Custom / Bot match created successfully! User must confirm within 20 minutes.");
+                alert("Custom / Bot match sent to confirmation lobby successfully!");
                 document.getElementById('custom-bot-name').value = '';
                 document.getElementById('custom-user-select').selectedIndex = 0;
             });
