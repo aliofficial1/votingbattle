@@ -47,7 +47,7 @@
         </div>
     </div>
 
-    <!-- Match Queues & Manual Pairing with User Stats -->
+    <!-- Match Queues with Real User Names -->
     <div class="grid-2">
         <div class="card">
             <h2>Queue Match Requests (Rs. 50)</h2>
@@ -59,12 +59,12 @@
         </div>
     </div>
 
-    <!-- Create Custom Match with Select User Dropdown & Bot Lobby -->
+    <!-- Create Custom Match / Bot Lobby (Fee Matched) -->
     <div class="card" style="border: 1px solid #38bdf8;">
-        <h2>Create Custom Match (Bot / Opponent)</h2>
+        <h2>Create Custom / Bot Match (Fee Matched)</h2>
         <div class="grid-2" style="margin-bottom:0;">
             <div>
-                <label style="font-size:11px; color:#94a3b8;">Select Fee</label>
+                <label style="font-size:11px; color:#94a3b8;">Select Fee (Must Match User)</label>
                 <select id="custom-fee">
                     <option value="50">Rs. 50</option>
                     <option value="100">Rs. 100</option>
@@ -79,12 +79,12 @@
         </div>
         <div style="margin-top: 8px;">
             <label style="font-size:11px; color:#94a3b8;">Opponent / Bot Name</label>
-            <input type="text" id="custom-bot-name" placeholder="Enter opponent name...">
+            <input type="text" id="custom-bot-name" placeholder="Enter opponent or bot name...">
         </div>
-        <button class="btn btn-success" onclick="createCustomMatch()" style="width:100%; margin-top:8px;">Start Custom Match</button>
+        <button class="btn btn-success" onclick="createCustomMatch()" style="width:100%; margin-top:8px;">Start Custom Match (20 Min Confirm)</button>
     </div>
 
-    <!-- Active Matches with Unlimited Admin Voting Control -->
+    <!-- Active Matches with Unlimited Voting Control -->
     <div class="grid-2">
         <div class="card">
             <h2>Active Matches (Rs. 50 Fee)</h2>
@@ -103,14 +103,12 @@
     </div>
 
     <div class="grid-2">
-        <!-- Deposit Requests -->
         <div class="card">
             <h2>Deposit Requests</h2>
             <div id="deposit-list">Loading...</div>
             <button id="dep-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('deposit')" style="width:100%; margin-top:8px;">Show More</button>
         </div>
 
-        <!-- Withdrawal Requests -->
         <div class="card">
             <h2>Withdrawal Requests</h2>
             <div id="withdraw-list">Loading...</div>
@@ -119,9 +117,8 @@
     </div>
 
     <div class="grid-2">
-        <!-- User Management & Match Request Control -->
         <div class="card">
-            <h2>User Management & Match Requests</h2>
+            <h2>User Management</h2>
             <input type="text" id="search-user-id" placeholder="Enter 8-Digit User ID...">
             <button class="btn" onclick="searchUser()" style="width:100%; margin-bottom:10px;">Search User Stats</button>
             
@@ -129,14 +126,12 @@
                 <p style="margin-bottom:4px;">ID: <span id="u-id" style="color:#38bdf8;">---</span></p>
                 <p style="margin-bottom:4px;">Balance: Rs. <span id="u-bal">0</span></p>
                 <p style="margin-bottom:4px; color:#34d399;">Wins: <span id="u-wins">0</span> | Losses: <span id="u-losses" style="color:#ef4444;">0</span></p>
-                <p style="margin-bottom:6px; color:#c084fc;">Total Votes Cast: <span id="u-high-votes">0</span></p>
                 <input type="number" id="new-user-bal" placeholder="New Balance...">
                 <button class="btn btn-success" onclick="updateUserBalance()" style="width:100%; margin-bottom:6px;">Change Balance</button>
                 <button id="suspend-btn" class="btn btn-danger" onclick="toggleAccountSuspension()" style="width:100%;">Suspend Account</button>
             </div>
         </div>
 
-        <!-- Support Chats -->
         <div class="card">
             <h2>Support Chats</h2>
             <div id="support-users-list" style="max-height: 220px; overflow-y: auto;">Loading chats...</div>
@@ -199,7 +194,7 @@
 
         function loadQueues() {
             db.ref('queues').on('value', (queueSnap) => {
-                db.ref('matches').once('value', (matchSnap) => {
+                db.ref('users').once('value', (userSnap) => {
                     const list50 = document.getElementById('queue-50-list');
                     const list100 = document.getElementById('queue-100-list');
                     const userSelect = document.getElementById('custom-user-select');
@@ -211,57 +206,40 @@
                     let q50 = queueSnap.child('50').val() || {};
                     let q100 = queueSnap.child('100').val() || {};
 
-                    function getUserStats(uId) {
-                        let wins = 0, losses = 0, totalVotes = 0;
-                        matchSnap.forEach(mChild => {
-                            let m = mChild.val();
-                            if(m.p1Id === uId || m.p2Id === uId) {
-                                let isP1 = m.p1Id === uId;
-                                let myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
-                                let oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
-                                totalVotes += myVotes;
-                                if(myVotes >= oppVotes) wins++; else losses++;
-                            }
-                        });
-                        return { wins, losses, totalVotes };
-                    }
+                    Object.keys(q50).forEach(qKey => {
+                        let q = q50[qKey];
+                        let uId = q.userId;
+                        let uData = userSnap.child(uId).val() || {};
+                        let realName = uData.username || q.userName || 'User';
 
-                    Object.keys(q50).forEach(uId => {
-                        let u = q50[uId];
-                        let uName = u.userName || 'User';
-                        let stats = getUserStats(uId);
-                        
                         h50 += `
                             <div class="item-box">
                                 <div>
-                                    <strong>${uName} (${uId})</strong><br>
-                                    <small style="color:#34d399;">Wins: ${stats.wins} | Losses: ${stats.losses}</small><br>
-                                    <small style="color:#c084fc;">High Votes: ${stats.totalVotes}</small>
+                                    <strong>${realName}</strong><br>
+                                    <small style="color:#38bdf8;">ID: ${uId} | Fee: 50 PKR</small>
                                 </div>
-                                <button class="btn btn-success" onclick="pairUsers('50', '${uId}', '${uName}')">Pair Match</button>
+                                <button class="btn btn-success" onclick="pairUsers('50', '${uId}', '${realName}')">Pair Match</button>
                             </div>
                         `;
-
-                        userSelect.innerHTML += `<option value="${uId}">${uName} (${uId}) - 50 PKR</option>`;
+                        userSelect.innerHTML += `<option value="${uId}">${realName} (${uId}) - 50 PKR</option>`;
                     });
 
-                    Object.keys(q100).forEach(uId => {
-                        let u = q100[uId];
-                        let uName = u.userName || 'User';
-                        let stats = getUserStats(uId);
-                        
+                    Object.keys(q100).forEach(qKey => {
+                        let q = q100[qKey];
+                        let uId = q.userId;
+                        let uData = userSnap.child(uId).val() || {};
+                        let realName = uData.username || q.userName || 'User';
+
                         h100 += `
                             <div class="item-box">
                                 <div>
-                                    <strong>${uName} (${uId})</strong><br>
-                                    <small style="color:#34d399;">Wins: ${stats.wins} | Losses: ${stats.losses}</small><br>
-                                    <small style="color:#c084fc;">High Votes: ${stats.totalVotes}</small>
+                                    <strong>${realName}</strong><br>
+                                    <small style="color:#38bdf8;">ID: ${uId} | Fee: 100 PKR</small>
                                 </div>
-                                <button class="btn btn-success" onclick="pairUsers('100', '${uId}', '${uName}')">Pair Match</button>
+                                <button class="btn btn-success" onclick="pairUsers('100', '${uId}', '${realName}')">Pair Match</button>
                             </div>
                         `;
-
-                        userSelect.innerHTML += `<option value="${uId}">${uName} (${uId}) - 100 PKR</option>`;
+                        userSelect.innerHTML += `<option value="${uId}">${realName} (${uId}) - 100 PKR</option>`;
                     });
 
                     list50.innerHTML = h50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
@@ -273,31 +251,40 @@
         function pairUsers(fee, uId, uName) {
             db.ref(`queues/${fee}`).once('value', (snap) => {
                 let users = [];
-                snap.forEach(c => { if(c.val().userId !== uId) users.push(c.val()); });
-                
-                let oppId = "", oppName = "";
-                if(users.length > 0) {
-                    oppId = users[0].userId;
-                    oppName = users[0].userName || 'Player 2';
-                } else {
-                    oppId = "Challenger_" + Math.floor(100 + Math.random()*900);
-                    oppName = "Challenger Player";
-                }
-
-                const matchId = 'match_' + Date.now();
-                db.ref(`matches/${matchId}`).set({
-                    p1Id: uId, p1Name: uName, p2Id: oppId, p2Name: oppName, fee: parseInt(fee),
-                    status: 'confirming', p1Confirmed: false, p2Confirmed: false, votesP1: 0, votesP2: 0,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                snap.forEach(c => { 
+                    if(c.val().userId !== uId) users.push(c.val()); 
                 });
+                
+                db.ref('users').once('value', (userSnap) => {
+                    let oppId = "", oppName = "";
+                    if(users.length > 0) {
+                        oppId = users[0].userId;
+                        let oppData = userSnap.child(oppId).val() || {};
+                        oppName = oppData.username || users[0].userName || 'Player 2';
+                    } else {
+                        oppId = "Challenger_" + Math.floor(100 + Math.random()*900);
+                        oppName = "Challenger Player";
+                    }
 
-                db.ref(`queues/${fee}/${uId}`).remove();
-                if(!oppId.includes("Challenger_")) db.ref(`queues/${fee}/${oppId}`).remove();
+                    const matchId = 'match_' + Date.now();
+                    db.ref(`matches/${matchId}`).set({
+                        p1Id: uId, p1Name: uName, p2Id: oppId, p2Name: oppName, fee: parseInt(fee),
+                        status: 'confirming', p1Confirmed: false, p2Confirmed: false, votesP1: 0, votesP2: 0,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    });
 
-                db.ref(`user_active_match/${uId}`).set({ matchId });
-                if(!oppId.includes("Challenger_")) db.ref(`user_active_match/${oppId}`).set({ matchId });
+                    // Remove from queue
+                    snap.forEach(c => {
+                        if(c.val().userId === uId || c.val().userId === oppId) {
+                            db.ref(`queues/${fee}/${c.key}`).remove();
+                        }
+                    });
 
-                alert(`Match started between ${uName} and ${oppName}!`);
+                    db.ref(`user_active_match/${uId}`).set({ matchId });
+                    if(!oppId.includes("Challenger_")) db.ref(`user_active_match/${oppId}`).set({ matchId });
+
+                    alert(`Match started between ${uName} and ${oppName}! (20 Mins Confirm Lobby)`);
+                });
             });
         }
 
@@ -306,7 +293,7 @@
             const uId = document.getElementById('custom-user-select').value;
             const botName = document.getElementById('custom-bot-name').value.trim();
 
-            if(!uId || !botName) { alert("Please select a user from queue and enter opponent name!"); return; }
+            if(!uId || !botName) { alert("Please select a user from queue and enter opponent/bot name!"); return; }
 
             db.ref(`users/${uId}`).once('value', (snapshot) => {
                 const userData = snapshot.val() || {};
@@ -321,16 +308,22 @@
                     fee: fee,
                     status: 'confirming',
                     p1Confirmed: false,
-                    p2Confirmed: true, // Bot auto-confirmed
+                    p2Confirmed: true, // Bot / Custom opponent auto-confirmed
                     votesP1: 0,
                     votesP2: 0,
                     createdAt: firebase.database.ServerValue.TIMESTAMP
                 });
 
-                db.ref(`queues/${fee}/${uId}`).remove();
+                // Remove user from queue
+                db.ref(`queues/${fee}`).once('value', (qSnap) => {
+                    qSnap.forEach(c => {
+                        if(c.val().userId === uId) db.ref(`queues/${fee}/${c.key}`).remove();
+                    });
+                });
+
                 db.ref(`user_active_match/${uId}`).set({ matchId });
 
-                alert("Custom match created successfully with confirmation lobby!");
+                alert("Custom / Bot match created successfully! User must confirm within 20 minutes.");
                 document.getElementById('custom-bot-name').value = '';
                 document.getElementById('custom-user-select').selectedIndex = 0;
             });
@@ -473,27 +466,16 @@
         }
 
         function approveTx(uId, txKey, type, amount) {
-            // First update transaction status to Approved
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' }, (error) => {
-                if(error) {
-                    alert("Error approving transaction!");
-                    return;
-                }
-                
-                // If Deposit, safely fetch user node and update balance by adding amount
+                if(error) { alert("Error approving transaction!"); return; }
                 if(type === 'Deposit') {
                     db.ref(`users/${uId}`).once('value', (snapshot) => {
                         let userData = snapshot.val() || {};
                         let currentBal = parseFloat(userData.balance || 0);
                         let addedAmount = parseFloat(amount || 0);
                         let newBal = currentBal + addedAmount;
-
                         db.ref(`users/${uId}`).update({ balance: newBal }, (err) => {
-                            if(!err) {
-                                alert(`Deposit approved successfully! Rs. ${addedAmount} added. New Balance: Rs. ${newBal}`);
-                            } else {
-                                alert("Failed to update user balance in database.");
-                            }
+                            if(!err) alert(`Deposit approved! Rs. ${addedAmount} added. New Balance: Rs. ${newBal}`);
                         });
                     });
                 } else {
@@ -521,20 +503,18 @@
                 document.getElementById('new-user-bal').value = bal;
 
                 db.ref('matches').once('value', (matchSnap) => {
-                    let totalVotes = 0, wins = 0, losses = 0;
+                    let wins = 0, losses = 0;
                     matchSnap.forEach((mChild) => {
                         let m = mChild.val();
                         if(m.p1Id === uId || m.p2Id === uId) {
                             let isP1 = m.p1Id === uId;
                             let myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
                             let oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
-                            totalVotes += myVotes;
                             if(myVotes >= oppVotes) wins++; else losses++;
                         }
                     });
                     document.getElementById('u-wins').innerText = wins;
                     document.getElementById('u-losses').innerText = losses;
-                    document.getElementById('u-high-votes').innerText = totalVotes;
                 });
             });
         }
