@@ -113,11 +113,11 @@
 
             <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Find Opponent / Start Match ➔</button>
 
-            <!-- Active / Started / Finding Matches -->
+            <!-- Your Started Matches List -->
             <div style="margin-top: 18px; text-align: left; border-top: 1px solid #1e293b; padding-top: 14px;">
-                <div style="font-size: 10px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Your Started / Active Matches</div>
+                <div style="font-size: 10px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Your Started Matches</div>
                 <div id="user-started-matches-list" style="max-height: 170px; overflow-y: auto;">
-                    <div style="color: #64748b; font-size: 11px; text-align: center; padding: 8px;">No active matches found</div>
+                    <div style="color: #64748b; font-size: 11px; text-align: center; padding: 8px;">No started matches found</div>
                 </div>
             </div>
 
@@ -152,7 +152,7 @@
             <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px; box-shadow:none;">Back to Home</button>
         </div>
 
-        <!-- Live Battle Screen (Voting + Stopwatch) -->
+        <!-- Live Battle Screen (Voting + 2 Hours Limit) -->
         <div id="screen-battle" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
                 <span id="battle-match-id" style="color: #38bdf8; font-family: monospace; font-weight: bold;">ID: #---</span>
@@ -164,7 +164,7 @@
 
             <h1>Voting Battle Live!</h1>
             <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px; border-radius: 8px; font-size: 11px; color: #38bdf8; font-weight: bold; margin-bottom: 12px;">
-                ⏱️ Active Duration: <span id="live-stopwatch">00:00:00</span>
+                ⏱️ Time Left (2 Hours): <span id="live-stopwatch">02:00:00</span>
             </div>
             <p style="margin-bottom: 10px;">Collect votes to win the battle pool!</p>
 
@@ -420,6 +420,7 @@
                     let html = '';
                     let activeCount = 0;
 
+                    // Load started/confirmed matches
                     matchSnap.forEach((child) => {
                         let m = child.val();
                         let mId = child.key;
@@ -445,6 +446,7 @@
                         }
                     });
 
+                    // Load queue status: User Name vs Finding Opponent...
                     queueSnap.forEach((feeSnap) => {
                         feeSnap.forEach((qChild) => {
                             let q = qChild.val();
@@ -464,12 +466,12 @@
                     });
 
                     window.currentUserActiveMatchesCount = activeCount;
-                    listEl.innerHTML = html || '<div style="color:#64748b; font-size:11px; text-align:center; padding:8px;">No active matches found</div>';
+                    listEl.innerHTML = html || '<div style="color:#64748b; font-size:11px; text-align:center; padding:8px;">No started matches found</div>';
                 });
             });
         }
 
-        function openMatchDirectly(mId) {
+function openMatchDirectly(mId) {
             currentMatchId = mId;
             db.ref(`matches/${mId}`).once('value', (snapshot) => {
                 let m = snapshot.val();
@@ -501,7 +503,8 @@
                 document.getElementById('form-forgot').classList.remove('hidden');
             }
         }
-function handleSignup() {
+
+        function handleSignup() {
             const username = document.getElementById('signup-username').value.trim();
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value.trim();
@@ -680,7 +683,7 @@ function handleSignup() {
             if(tab === 'status') loadTransactions();
         }
 
-        function submitDeposit() {
+function submitDeposit() {
             db.ref(`transactions/${userId}`).once('value', (snapshot) => {
                 let hasPending = false;
                 snapshot.forEach((child) => { if(child.val().status === 'Pending' || child.val().status === 'Processing') hasPending = true; });
@@ -762,7 +765,6 @@ function handleSignup() {
             });
         }
 
-
         function openProfileModal() { document.getElementById('profile-modal').classList.remove('hidden'); document.getElementById('match-history-container').classList.add('hidden'); }
         function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
         function toggleMatchHistory() {
@@ -833,7 +835,7 @@ function handleSignup() {
 
                 const createdAt = match.createdAt || Date.now();
                 const elapsedTime = Math.floor((Date.now() - createdAt) / 1000);
-                const remainingSecs = 1200 - elapsedTime;
+                const remainingSecs = 1200 - elapsedTime; // 20 minutes confirmation timer
 
                 if(timerInterval) clearInterval(timerInterval);
                 if(remainingSecs <= 0) {
@@ -896,8 +898,9 @@ function handleSignup() {
             document.getElementById('battle-p1-name').innerText = match.p1Name;
             document.getElementById('battle-p2-name').innerText = match.p2Name;
 
+            // 2 Hours Timer Countdown
             const createdAt = match.createdAt || Date.now();
-            startLiveStopwatch(createdAt);
+            startTwoHourCountdown(createdAt);
 
             checkDeviceVotedStatus();
 
@@ -910,15 +913,23 @@ function handleSignup() {
             });
         }
 
-        function startLiveStopwatch(startTime) {
+        function startTwoHourCountdown(startTime) {
             if(liveStopwatchInterval) clearInterval(liveStopwatchInterval);
+            const totalDuration = 2 * 60 * 60; // 2 hours in seconds
+
             liveStopwatchInterval = setInterval(() => {
                 const now = Date.now();
                 const diff = Math.floor((now - startTime) / 1000);
-                
-                const hours = Math.floor(diff / 3600);
-                const minutes = Math.floor((diff % 3600) / 60);
-                const seconds = diff % 60;
+                let remaining = totalDuration - diff;
+
+                if(remaining <= 0) {
+                    remaining = 0;
+                    clearInterval(liveStopwatchInterval);
+                }
+
+                const hours = Math.floor(remaining / 3600);
+                const minutes = Math.floor((remaining % 3600) / 60);
+                const seconds = remaining % 60;
 
                 const formatted = 
                     String(hours).padStart(2, '0') + ":" +
@@ -1025,7 +1036,7 @@ function handleSignup() {
             });
         }
 
-        window.onload = function() {
+window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const matchParam = urlParams.get('match');
             if(matchParam) {
@@ -1040,5 +1051,5 @@ function handleSignup() {
             }
         };
     </script>
-</body>
+    </body>
 </html>
