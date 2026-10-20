@@ -3,683 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>votingBattle - 1-on-1 Voting Match</title>
+    <title>VoteBattle Arena</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: #f3f4f6;
-            color: #1f2937;
-            padding-bottom: 30px;
-        }
-
-        header {
-            background: linear-gradient(135deg, #4f46e5, #3730a3);
-            color: white;
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .logo {
-            font-size: 18px;
-            font-weight: 800;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .header-btns {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .account-btn {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            border: none;
-            color: white;
-            cursor: pointer;
-            transition: background 0.2s;
-            text-decoration: none;
-        }
-
-        .account-btn:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
-
-        main {
-            max-width: 450px;
-            margin: 20px auto;
-            padding: 0 16px;
-        }
-
-        .card {
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e5e7eb;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 12px;
-        }
-
-        .card .match-details {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            text-align: left;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            color: white;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn:disabled {
-            background: #9ca3af !important;
-            cursor: not-allowed;
-        }
-
-        .btn-match { background: linear-gradient(135deg, #4f46e5, #6366f1); margin-top: 10px; }
-        .btn-deposit { background: linear-gradient(135deg, #059669, #10b981); }
-        .btn-withdraw { background: linear-gradient(135deg, #2563eb, #3b82f6); }
-        .btn-vote { background: linear-gradient(135deg, #4f46e5, #6366f1); white-space: nowrap; }
-        .btn-share { background: linear-gradient(135deg, #059669, #10b981); margin-top: 10px; }
-
-        .status-msg {
-            font-size: 13px;
-            color: #d97706;
-            margin-top: 12px;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .matches-section {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e5e7eb;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .matches-section h3 {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #111827;
-            border-bottom: 1.5px solid #f3f4f6;
-            padding-bottom: 8px;
-        }
-
-        .match-item {
-            padding: 14px;
-            background: #f9fafb;
-            border: 1.5px solid #6366f1;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            font-size: 13px;
-            text-align: left;
-        }
-
-        .match-info {
-            color: #111827;
-            font-weight: 700;
-            font-size: 15px;
-            margin-bottom: 6px;
-            display: block;
-            word-break: break-all;
-        }
-
-        .match-timer {
-            font-size: 13px;
-            color: #dc2626;
-            font-weight: 700;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .vote-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            margin-bottom: 6px;
-            gap: 8px;
-        }
-
-        .vote-row span {
-            word-break: break-all;
-            font-size: 12px;
-            flex: 1;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-            z-index: 100;
-        }
-
-        .modal {
-            background: white;
-            width: 100%;
-            max-width: 440px;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 10px;
-        }
-
-        .modal-header h3 {
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .modal-logout-btn {
-            background-color: #dc2626;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: #6b7280;
-            line-height: 1;
-        }
-
-        .player-id-box {
-            background: #eef2ff;
-            border: 1.5px dashed #6366f1;
-            padding: 8px 12px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 12px;
-            font-size: 13px;
-            color: #3730a3;
-            font-weight: 600;
-        }
-
-        .balance-box {
-            background: #f3f4f6;
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 16px;
-        }
-
-        .balance-box span {
-            font-size: 20px;
-            font-weight: 800;
-            color: #4f46e5;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 16px;
-            background: #f3f4f6;
-            padding: 4px;
-            border-radius: 10px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 8px 2px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 11px;
-            cursor: pointer;
-            color: #4b5563;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .tab-btn.active {
-            background: #4f46e5;
-            color: white;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1.5px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            background: white;
-            color: #1f2937;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: #4f46e5;
-        }
-
-        textarea {
-            resize: none;
-        }
-
-        .payment-info {
-            font-size: 13px;
-            color: #065f46;
-            background-color: #ecfdf5;
-            border: 1.5px solid #10b981;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 6px;
-            line-height: 1.4;
-        }
-
-        .history-item {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-
-        .history-item div {
-            margin-bottom: 3px;
-        }
-
-        .show-more-btn {
-            background: none;
-            border: none;
-            color: #4f46e5;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            text-align: center;
-            width: 100%;
-            padding: 8px;
-            margin-top: 4px;
-            margin-bottom: 12px;
-        }
-
-        .chat-box {
-            max-height: 250px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
-            padding: 4px;
-        }
-
-        .chat-msg {
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 13px;
-            max-width: 80%;
-            line-height: 1.4;
-        }
-
-        .chat-user {
-            background: #eef2ff;
-            color: #3730a3;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        .chat-admin {
-            background: #f3f4f6;
-            color: #1f2937;
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-            border: 1.5px solid #e5e7eb;
-        }
-
-        .badge-pending { color: #d97706; font-weight: 700; }
-        .badge-approved { color: #059669; font-weight: 700; }
-        .badge-rejected { color: #dc2626; font-weight: 700; }
-        .badge-win { color: #059669; font-weight: 800; }
-        .badge-loss { color: #dc2626; font-weight: 800; }
-        .badge-draw { color: #4b5563; font-weight: 800; }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #020617; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
         
-        .auth-switch {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 13px;
-            color: #4b5563;
-        }
-        .auth-switch span {
-            color: #4f46e5;
-            font-weight: 600;
-            cursor: pointer;
-        }
+        header { background-color: #0f172a; border-bottom: 1px solid #1e293b; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .logo { font-weight: 900; font-size: 18px; background: linear-gradient(to right, #38bdf8, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; user-select: none; }
+        
+        .header-actions { display: flex; align-items: center; gap: 6px; }
+        .wallet-btn { background: #1e293b; padding: 6px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #38bdf8; border: 1px solid #334155; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .support-btn { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; position: relative; }
+        .profile-btn { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+        .red-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 5px; font-size: 9px; font-weight: bold; }
+
+        main { flex: 1; max-width: 450px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; justify-content: center; }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); margin-bottom: 16px; text-align: center; }
+        h1 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: #fff; }
+        p { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 16px; }
+        
+        .fee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .fee-btn { padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; border: 1px solid #1e293b; background: #020617; color: #94a3b8; text-align: center; transition: 0.2s; }
+        .fee-btn.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+        
+        .primary-btn { width: 100%; background: linear-gradient(to right, #0284c7, #7c3aed); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
+        .secondary-btn { width: 100%; background: #059669; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        
+        input, select { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none; }
+        input:focus, select:focus { border-color: #38bdf8; }
+        
+        .search-box { display: flex; gap: 8px; }
+        .go-btn { background: #1e293b; color: #fff; border: 1px solid #334155; padding: 0 16px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        
+        .hidden { display: none !important; }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; max-height: 90vh; overflow-y: auto; text-align: left; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+        .close-modal { background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
+        
+        .tab-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+        .tab-btn { background: #020617; border: 1px solid #1e293b; color: #94a3b8; padding: 8px 4px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; text-align: center; }
+        .tab-btn.active { background: #38bdf8; color: #020617; border-color: #38bdf8; font-weight: 900; }
+
+        .info-box { background: #020617; border: 1px solid #334155; padding: 10px; border-radius: 8px; font-size: 11px; color: #38bdf8; margin-bottom: 10px; line-height: 1.4; }
+
+        .history-item { background: #020617; border: 1px solid #1e293b; padding: 10px; border-radius: 10px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .status-tag { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .status-pending { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+        .chat-box { background: #020617; border: 1px solid #1e293b; border-radius: 10px; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-msg { padding: 8px 12px; border-radius: 8px; font-size: 12px; max-width: 80%; }
+        .chat-user { background: #1e293b; align-self: flex-end; color: #f8fafc; }
+        .chat-admin { background: #7c3aed; align-self: flex-start; color: #fff; }
+        .seen-status { font-size: 9px; color: #94a3b8; text-align: right; margin-top: 2px; }
+
+        .spinner { width: 35px; height: 35px; border: 3px solid rgba(56, 189, 248, 0.2); border-top: 3px solid #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 12px; }
+        .badge-waiting { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge-confirmed { background: rgba(5, 150, 105, 0.15); color: #34d399; border: 1px solid rgba(5, 150, 105, 0.3); }
+        .players-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+        .player-box { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; text-align: center; }
+        .cancel-link { color: #f43f5e; background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 12px; margin-top: 8px; display: inline-block; }
+        .lobby-box { background: #020617; border: 1px solid #334151; border-radius: 12px; padding: 16px; margin-top: 16px; text-align: center; }
     </style>
 </head>
 <body>
-
     <header>
-        <div class="logo" id="logoAdminTrigger" onclick="checkAdminSecretTap()">
-            votingBattle
-        </div>
-        <div class="header-btns">
-            <button class="account-btn" onclick="openSupportModal()" style="background-color: #059669;">Support</button>
-            <button class="account-btn" id="mainAccountBtn" onclick="handleHeaderBtnClick()" style="visibility: hidden;">Account</button>
+        <div class="logo" onclick="handleLogoClick()">VoteBattle</div>
+        <div class="header-actions">
+            <button class="wallet-btn" onclick="openWalletModal()">Rs <span id="user-balance">1000</span></button>
+            <button class="support-btn" onclick="openSupportModal()">
+                Support
+                <span id="support-badge" class="red-badge hidden">1</span>
+            </button>
+            <button class="profile-btn" onclick="openProfileModal()">Profile</button>
         </div>
     </header>
 
     <main>
-        <!-- Section 1: Start Match -->
-        <div class="card">
-            <h2>Start Match</h2>
-            <div class="match-details">
-                <div>
-                    <label style="font-size: 12px; font-weight: 600; color: #4b5563; display: block; margin-bottom: 4px;">Select Entry Price:</label>
-                    <select id="matchEntryFee" onchange="updateMatchDetails()">
-                        <option value="" disabled selected>-- Tap to select price --</option>
-                        <option value="50">Rs. 50</option>
-                        <option value="100">Rs. 100</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: 600; color: #4b5563; display: block; margin-bottom: 4px;">Enter Your Name (Required):</label>
-                    <input type="text" id="matchPlayerName" placeholder="Enter your player name...">
-                </div>
-                <div id="matchInfoText" style="font-size: 13px; color: #059669; font-weight: 700; text-align: center; margin-top: 2px;">
-                    Please select an entry price.
-                </div>
-            </div>
+        <!-- Home Card -->
+        <div id="screen-home" class="card">
+            <h1>Head-to-Head Voting Battle</h1>
+            <p>Choose your entry fee, find an opponent, get confirmed within 20 minutes, and win votes to claim the prize pool!</p>
             
-            <button onclick="findMatch()" class="btn btn-match">
-                Find Match
-            </button>
-            <div id="searchStatus" class="status-msg"></div>
-        </div>
+            <div style="text-align: left; margin-bottom: 12px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Select Entry Fee (PKR)</div>
+            <div class="fee-grid">
+                <button onclick="setEntryFee(50)" id="fee-btn-50" class="fee-btn active">Rs. 50</button>
+                <button onclick="setEntryFee(100)" id="fee-btn-100" class="fee-btn">Rs. 100</button>
+            </div>
 
-        <!-- 🎯 Waiting Lobby Card -->
-        <div class="matches-section" id="matchLobbyCard">
-            <h3>Match Lobby & Status</h3>
-            <div id="matchLobbyList">
-                <div class="match-item">
-                    <span class="match-info">No match waiting.</span>
+            <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Start Match ➔</button>
+
+            <div id="match-lobby-box" class="lobby-box hidden">
+                <div class="spinner"></div>
+                <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 4px; color:#38bdf8;">Finding Opponent...</h3>
+                <p style="font-size: 11px; margin-bottom: 8px;">Waiting for opponent with Rs. <span id="wait-fee">50</span> fee.</p>
+                <button onclick="cancelQueue()" class="cancel-link">Cancel Queue</button>
+            </div>
+
+            <div style="margin-top: 20px; text-align: left; border-top: 1px solid #1e293b; padding-top: 16px;">
+                <div style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Join via Match Link/ID</div>
+                <div class="search-box">
+                    <input type="text" id="search-match-id" placeholder="Enter Match ID..." style="margin-bottom:0;">
+                    <button class="go-btn" onclick="searchMatch()">Go</button>
                 </div>
             </div>
         </div>
 
-        <!-- Section 2: Search Match & Cast Vote -->
-        <div class="card">
-            <h2>Search Match by Link</h2>
-            <div class="match-details">
-                <label style="font-size: 12px; font-weight: 600; color: #4b5563; display: block; margin-bottom: 4px;">Paste Match Link to Vote:</label>
-                <div style="display: flex; gap: 6px;">
-                    <input type="text" id="matchSearchInput" placeholder="Paste Match Link here...">
-                    <button onclick="searchMatchByLink()" class="btn btn-match" style="width: auto; padding: 10px 14px; margin-top: 0; font-size: 13px;">Search</button>
+        <!-- Confirmation Screen -->
+        <div id="screen-confirm" class="card hidden">
+            <div class="status-badge badge-waiting">Action Required: Confirm Join</div>
+            <h1>Match Found!</h1>
+            <p>Both players must confirm within <span id="timer-display" style="color: #38bdf8; font-weight: bold;">20:00</span> minutes or the match will be cancelled.</p>
+
+            <div class="players-grid">
+                <div class="player-box">
+                    <div style="font-weight: bold; margin-bottom: 4px;" id="p1-name">You</div>
+                    <span id="p1-badge" class="status-badge badge-waiting">Waiting...</span>
+                </div>
+                <div class="player-box">
+                    <div style="font-weight: bold; margin-bottom: 4px;" id="p2-name">Opponent</div>
+                    <span id="p2-badge" class="status-badge badge-waiting">Waiting...</span>
                 </div>
             </div>
-            <div id="searchedMatchResult"></div>
+
+            <button id="btn-confirm-join" onclick="confirmMatchJoin()" class="secondary-btn">Confirm Join Match</button>
         </div>
 
-        <!-- Active Started Matches Section -->
-        <div class="matches-section" id="activeMatchesCard">
-            <h3>Your Started Matches</h3>
-            <div id="startedMatchesList">
-                <div class="match-item">
-                    <span class="match-info">No active match found yet.</span>
+        <!-- Battle Screen -->
+        <div id="screen-battle" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
+                <span id="battle-match-id" style="color: #38bdf8; font-family: monospace;">ID: #---</span>
+                <button onclick="shareMatchLink()" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">Share</button>
+            </div>
+
+            <h1>Voting Battle Live!</h1>
+
+            <div class="players-grid">
+                <div class="player-box" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;" id="battle-p1-name">Player A</div>
+                        <div style="background: #020617; padding: 8px; border-radius: 8px; margin-bottom: 8px; border:1px solid #1e293b;">
+                            <span style="font-size: 10px; color: #94a3b8; display: block;">Votes</span>
+                            <span id="votes-p1" style="font-size: 18px; font-weight: 900; color: #38bdf8;">0</span>
+                        </div>
+                    </div>
+                    <button onclick="castVote('p1')" style="background: #38bdf8; color: #020617; font-weight: 900; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">Vote A</button>
+                </div>
+
+                <div class="player-box" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;" id="battle-p2-name">Player B</div>
+                        <div style="background: #020617; padding: 8px; border-radius: 8px; margin-bottom: 8px; border:1px solid #1e293b;">
+                            <span style="font-size: 10px; color: #94a3b8; display: block;">Votes</span>
+                            <span id="votes-p2" style="font-size: 18px; font-weight: 900; color: #c084fc;">0</span>
+                        </div>
+                    </div>
+                    <button onclick="castVote('p2')" style="background: #8b5cf6; color: #fff; font-weight: 900; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">Vote B</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Section 3: Invite Friends -->
-        <div class="card" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe;">
-            <h3 style="font-size: 16px; color: #1e40af; margin-bottom: 6px;">📢 Invite Friends</h3>
-            <p style="font-size: 12px; color: #1e3a8a; margin-bottom: 12px;">Bring your friends to votingBattle and play 1-on-1 matches together!</p>
-            <button onclick="shareWebsiteLink()" class="btn btn-share" style="margin-top: 0;">
-                Invite Friends to Website
-            </button>
+            <p style="margin-top: 12px;">Share this match link with friends to get more votes!</p>
         </div>
     </main>
 
-    <!-- Support Modal -->
-    <div class="modal-overlay" id="supportModal">
-        <div class="modal">
+    <!-- WALLET MODAL -->
+    <div id="wallet-modal" class="modal-overlay hidden">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3>💬 Admin Support Chat</h3>
-                <button class="close-btn" onclick="closeSupportModal()">&times;</button>
+                <h3 style="font-size: 16px; font-weight: bold;">Wallet & Transactions</h3>
+                <button class="close-modal" onclick="closeWalletModal()">✕</button>
             </div>
-            <div class="chat-box" id="userChatBox">
-                <div style="text-align: center; color: #6b7280; font-size: 12px; padding: 10px;">Loading messages...</div>
+            
+            <div class="tab-grid-3">
+                <button class="tab-btn active" id="tab-deposit-btn" onclick="switchWalletTab('deposit')">Deposit</button>
+                <button class="tab-btn" id="tab-withdraw-btn" onclick="switchWalletTab('withdraw')">Withdraw</button>
+                <button class="tab-btn" id="tab-status-btn" onclick="switchWalletTab('status')">Status</button>
             </div>
-            <div class="form-group">
-                <textarea id="userChatMessage" rows="2" placeholder="Type your message to admin..."></textarea>
-                <button onclick="sendUserSupportMessage()" class="btn btn-match" style="padding: 10px;">Send Message</button>
+
+            <div id="wallet-deposit-section">
+                <label style="font-size: 11px; color:#94a3b8;">Select Method</label>
+                <select id="dep-method" onchange="updateDepositInstructions()">
+                    <option value="EasyPaisa">EasyPaisa</option>
+                    <option value="JazzCash">JazzCash</option>
+                    <option value="Binance ID">Binance ID</option>
+                    <option value="USDT Wallet">USDT Wallet</option>
+                </select>
+
+                <div id="dep-instructions" class="info-box">
+                    Send amount to EasyPaisa Number: <b>03001234567</b> (Name: VoteBattle Admin)
+                </div>
+
+                <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
+                <input type="number" id="dep-amount" placeholder="Enter amount...">
+                <button onclick="submitDeposit()" class="primary-btn" style="padding: 10px;">Submit Deposit Request</button>
+            </div>
+
+            <div id="wallet-withdraw-section" class="hidden">
+                <label style="font-size: 11px; color:#94a3b8;">Select Method</label>
+                <select id="wd-method">
+                    <option value="EasyPaisa">EasyPaisa</option>
+                    <option value="JazzCash">JazzCash</option>
+                    <option value="Binance ID">Binance ID</option>
+                    <option value="USDT Wallet">USDT Wallet</option>
+                </select>
+                <label style="font-size: 11px; color:#94a3b8;">Account / Wallet Details</label>
+                <input type="text" id="wd-account" placeholder="Account Number or ID...">
+                <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
+                <input type="number" id="wd-amount" placeholder="Enter amount...">
+                <button onclick="submitWithdraw()" class="primary-btn" style="padding: 10px;">Submit Withdrawal Request</button>
+            </div>
+
+            <div id="wallet-status-section" class="hidden">
+                <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #38bdf8;">Recent Status (Last 20 Days)</h4>
+                <div id="transaction-list" style="max-height: 200px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Auth Modal -->
-    <div class="modal-overlay" id="authModal">
-        <div class="modal">
+    <!-- SUPPORT MODAL -->
+    <div id="support-modal" class="modal-overlay hidden">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3 id="authTitle">Create New Account</h3>
-                <button class="close-btn" onclick="closeAuthModal()">&times;</button>
+                <h3 style="font-size: 16px; font-weight: bold;">Admin Support Chat</h3>
+                <button class="close-modal" onclick="closeSupportModal()">✕</button>
             </div>
+            
+            <div id="support-chat-box" class="chat-box"></div>
 
-            <!-- Sign Up Form -->
-            <div id="signupFormContainer" class="form-group">
-                <input type="text" id="signupName" placeholder="Full Name / Username">
-                <input type="email" id="signupEmail" placeholder="Email Address">
-                <input type="password" id="signupPassword" placeholder="Password (Min 6 chars)">
-                <button onclick="signupUser()" class="btn btn-deposit">Create Account</button>
-                <div class="auth-switch">Already have an account? <span onclick="toggleAuthMode('login')">Login</span></div>
-            </div>
-
-            <!-- Login Form -->
-            <div id="loginFormContainer" class="form-group" style="display: none;">
-                <input type="email" id="loginEmail" placeholder="Email Address">
-                <input type="password" id="loginPassword" placeholder="Password">
-                
-                <div style="text-align: right; margin-top: -4px; margin-bottom: 4px;">
-                    <span onclick="handleForgotPassword()" style="color: #4f46e5; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;">Forgot Password?</span>
-                </div>
-
-                <button onclick="loginUser()" class="btn btn-match">Login</button>
-                <div class="auth-switch">Don't have an account? <span onclick="toggleAuthMode('signup')">Sign Up</span></div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="support-input" placeholder="Type your message..." style="margin-bottom:0;">
+                <button onclick="sendSupportMessage()" class="go-btn" style="padding: 0 12px;">Send</button>
             </div>
         </div>
     </div>
 
-    <!-- Account Modal -->
-    <div class="modal-overlay" id="accountModal">
-        <div class="modal">
+    <!-- PROFILE MODAL -->
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3>My Account</h3>
-                <div class="header-actions">
-                    <button class="modal-logout-btn" onclick="logoutUser()">Logout</button>
-                    <button class="close-btn" onclick="closeAccountModal()">&times;</button>
+                <h3 style="font-size: 16px; font-weight: bold;">User Profile</h3>
+                <button class="close-modal" onclick="closeProfileModal()">✕</button>
+            </div>
+            
+            <div style="background: #020617; border: 1px solid #1e293b; padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center;">
+                <span style="font-size: 11px; color: #94a3b8; display: block;">Your 8-Digit User ID</span>
+                <span id="profile-uid" style="font-size: 18px; font-weight: 900; color: #38bdf8; font-family: monospace;">--------</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 11px; color:#94a3b8;">Change Your Name</label>
+                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <input type="text" id="new-name-input" placeholder="Enter new name..." style="margin-bottom:0;">
+                    <button onclick="updateUserName()" class="go-btn" style="padding: 0 12px;">Save</button>
                 </div>
             </div>
 
-            <div class="player-id-box">
-                Player ID: <span id="displayPlayerId" style="font-weight: 800; color: #4f46e5; font-size: 16px;">Loading...</span>
-            </div>
+            <button onclick="toggleMatchHistory()" class="primary-btn" style="padding: 10px; font-size: 12px; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155;">View Match History (Last 15 Days)</button>
 
-            <div class="balance-box">
-                <p style="font-size: 12px; color: #6b7280;">Available Balance</p>
-                <span id="walletBalance">Rs. 0</span>
-            </div>
-
-            <div class="tab-buttons">
-                <button class="tab-btn active" id="btnTabDeposit" onclick="switchTab('deposit')">Deposit</button>
-                <button class="tab-btn" id="btnTabWithdraw" onclick="switchTab('withdraw')">Withdraw</button>
-                <button class="tab-btn" id="btnTabStatus" onclick="switchTab('status')">Status</button>
-                <button class="tab-btn" id="btnTabMatches" onclick="switchTab('matches')">Match History</button>
-            </div>
-
-            <!-- Deposit Tab -->
-            <div id="depositTab" class="tab-content active">
-                <div class="form-group">
-                    <label style="font-size: 12px; font-weight: 600; color: #4b5563;">Select Payment Method</label>
-                    <select id="depositMethod" onchange="updateDepositInfo()">
-                        <option value="EasyPaisa">EasyPaisa</option>
-                        <option value="JazzCash">JazzCash</option>
-                        <option value="Binance">Binance (Pay ID / USDT)</option>
-                    </select>
-
-                    <div class="payment-info" id="depositInfoText">
-                        Send Rs. 50+ to EasyPaisa: <strong>03001234567</strong> (Ali Raza)
-                    </div>
-
-                    <input type="number" id="depositAmount" placeholder="Amount (PKR / USD equivalent)">
-                    <input type="text" id="trxId" placeholder="TRX ID / Transaction Hash">
-                    <input type="text" id="senderNumber" placeholder="Sender Mobile Number">
-                    
-                    <button id="depositSubmitBtn" onclick="submitDeposit()" class="btn btn-deposit">
-                        Submit Deposit
-                    </button>
-                    <div id="depositLockNotice" style="font-size: 12px; color: #d97706; text-align: center; font-weight: 600; display: none;">
-                        Your previous deposit request is pending verification.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Withdrawal Tab -->
-            <div id="withdrawTab" class="tab-content">
-                <div class="form-group">
-                    <label style="font-size: 12px; font-weight: 600; color: #4b5563;">Select Receiving Method</label>
-                    <select id="withdrawMethod">
-                        <option value="EasyPaisa">EasyPaisa</option>
-                        <option value="JazzCash">JazzCash</option>
-                        <option value="Binance">Binance (Pay ID / USDT Address)</option>
-                    </select>
-
-                    <input type="number" id="withdrawAmount" placeholder="Amount (Min Rs. 95)">
-                    <input type="text" id="withdrawNumber" placeholder="Account Number / Binance Pay ID">
-                    <input type="text" id="accountTitle" placeholder="Account Title / Name">
-                    
-                    <button id="withdrawSubmitBtn" onclick="submitWithdrawal()" class="btn btn-withdraw">
-                        Request Withdrawal
-                    </button>
-                    <div id="withdrawLockNotice" style="font-size: 12px; color: #d97706; text-align: center; font-weight: 600; display: none;">
-                        Your previous withdrawal request is pending approval.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Status / History Tab -->
-            <div id="statusTab" class="tab-content">
-                <div class="form-group" style="max-height: 300px; overflow-y: auto;">
-                    <h4 style="font-size: 13px; font-weight: 700; color: #111827;">Deposit Requests</h4>
-                    <div id="depositHistoryList">Loading...</div>
-                    <button id="depositShowMoreBtn" class="show-more-btn" onclick="toggleShowMore('deposit')" style="display: none;">Show More</button>
-
-                    <h4 style="font-size: 13px; font-weight: 700; color: #111827; margin-top: 10px;">Withdrawal Requests</h4>
-                    <div id="withdrawHistoryList">Loading...</div>
-                    <button id="withdrawShowMoreBtn" class="show-more-btn" onclick="toggleShowMore('withdraw')" style="display: none;">Show More</button>
-                </div>
-            </div>
-
-            <!-- Match History Tab -->
-            <div id="matchesTab" class="tab-content">
-                <div class="form-group" style="max-height: 300px; overflow-y: auto;">
-                    <h4 style="font-size: 13px; font-weight: 700; color: #111827;">My Match History</h4>
-                    <div id="matchHistoryList">Loading match history...</div>
-                </div>
+            <div id="match-history-container" class="hidden">
+                <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #c084fc;">Match History</h4>
+                <div id="match-history-list" style="max-height: 150px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
-
-    <!-- Admin Password Modal -->
-    <div class="modal-overlay" id="adminPasswordModal">
-        <div class="modal" style="max-width: 320px; text-align: center;">
-            <h3 style="margin-bottom: 12px; font-size: 16px;">Admin Login</h3>
-            <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">Enter Admin Secret Code</p>
-            <div class="form-group">
-                <input type="password" id="adminCodeInput" placeholder="Password" style="margin-bottom: 12px;">
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="closeAdminModal()" class="btn" style="background: #9ca3af; padding: 10px;">Cancel</button>
-                    <button onclick="verifyAdminCode()" class="btn" style="background: #4f46e5; padding: 10px;">Login</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDGu1r9uSKymwTH_5nQIwW8qKC9TYCrPow",
@@ -691,1157 +284,436 @@
             appId: "1:572901936550:web:a3918de85c585d51975367"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        db.enablePersistence().catch((err) => {});
-
-        let currentUserId = null;
-        let currentUserName = localStorage.getItem("cached_username") || "User";
-        let matchesUnsubscribe = null;
-        let requestsUnsubscribe = null;
-        let matchTimersInterval = null;
-        let chatUnsubscribe = null;
-
-        let allDeposits = [];
-        let allWithdrawals = [];
-        let showAllDeposits = false;
-        let showAllWithdrawals = false;
-
-        if(localStorage.getItem("cached_balance") !== null) {
-            document.getElementById("walletBalance").innerText = "Rs. " + localStorage.getItem("cached_balance");
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-        if(localStorage.getItem("cached_player_id") !== null) {
-            document.getElementById("displayPlayerId").innerText = localStorage.getItem("cached_player_id");
+        const db = firebase.database();
+
+        let userId = localStorage.getItem('vb_user_id');
+        if(!userId) {
+            userId = Math.floor(10000000 + Math.random() * 90000000).toString();
+            localStorage.setItem('vb_user_id', userId);
+        }
+        
+        let userName = localStorage.getItem('vb_user_name') || ('User_' + userId.substring(4));
+        let balance = 1000;
+        let selectedFee = 50;
+        let currentMatchId = null;
+        let isPlayerOne = false;
+        let timerInterval = null;
+        let dbRef = null;
+
+        // Logo tap for Admin modal
+        let logoTapCount = 0;
+        let logoTapTimer = null;
+        function handleLogoClick() {
+            logoTapCount++;
+            if(logoTapTimer) clearTimeout(logoTapTimer);
+            if(logoTapCount === 6) {
+                logoTapCount = 0;
+                showAdminLoginModal();
+            } else {
+                logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1500);
+            }
+        }
+
+        function showAdminLoginModal() {
+            let modalHtml = `
+                <div id="admin-login-overlay" style="position: fixed; inset: 0; background: rgba(2, 6, 23, 0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px;">
+                    <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 320px; padding: 20px; text-align: center;">
+                        <h3 style="font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 12px;">Admin Login</h3>
+                        <input type="password" id="admin-secret-input" placeholder="Enter Secret Code..." style="width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none;">
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="verifyAdminCode()" class="primary-btn" style="padding: 10px; font-size: 13px;">Enter</button>
+                            <button onclick="closeAdminLoginModal()" class="secondary-btn" style="padding: 10px; font-size: 13px; background: #1e293b; border: 1px solid #334155;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function verifyAdminCode() {
+            const code = document.getElementById('admin-secret-input').value;
+            if(code === "ali100") {
+                window.location.href = "admin.html";
+            } else {
+                alert("Incorrect Code!");
+                closeAdminLoginModal();
+            }
+        }
+
+        function closeAdminLoginModal() {
+            const overlay = document.getElementById('admin-login-overlay');
+            if(overlay) overlay.remove();
+        }
+
+        document.getElementById('profile-uid').innerText = userId;
+        document.getElementById('user-balance').innerText = balance;
+        document.getElementById('new-name-input').value = userName;
+
+        db.ref(`support_chats/${userId}`).on('value', (snapshot) => {
+            let unreadCount = 0;
+            snapshot.forEach((child) => {
+                let msg = child.val();
+                if(msg.sender === 'admin' && !msg.userRead) unreadCount++;
+            });
+            const badge = document.getElementById('support-badge');
+            if(unreadCount > 0) {
+                badge.innerText = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        });
+
+        function updateUserName() {
+            const newName = document.getElementById('new-name-input').value.trim();
+            if(!newName) { alert("Name cannot be empty"); return; }
+            userName = newName;
+            localStorage.setItem('vb_user_name', userName);
+            alert("Name updated successfully!");
+        }
+
+        function openSupportModal() {
+            document.getElementById('support-modal').classList.remove('hidden');
+            loadSupportChat();
+            db.ref(`support_chats/${userId}`).once('value', (snapshot) => {
+                snapshot.forEach((child) => {
+                    if(child.val().sender === 'admin') {
+                        db.ref(`support_chats/${userId}/${child.key}`).update({ userRead: true });
+                    }
+                });
+            });
+        }
+        function closeSupportModal() { document.getElementById('support-modal').classList.add('hidden'); }
+
+        function sendSupportMessage() {
+            const text = document.getElementById('support-input').value.trim();
+            if(!text) return;
+            db.ref(`support_chats/${userId}`).push({
+                sender: 'user',
+                text: text,
+                seen: false,
+                userRead: true,
+                timestamp: Date.now()
+            });
+            document.getElementById('support-input').value = '';
+            loadSupportChat();
+        }
+
+        function loadSupportChat() {
+            const chatBox = document.getElementById('support-chat-box');
+            chatBox.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px;">Loading chat...</div>';
+            db.ref(`support_chats/${userId}`).on('value', (snapshot) => {
+                chatBox.innerHTML = '';
+                if(!snapshot.exists()) {
+                    chatBox.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px;">No messages yet.</div>';
+                    return;
+                }
+                let html = '';
+                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                snapshot.forEach((child) => {
+                    const msg = child.val();
+                    if(msg.timestamp >= sevenDaysAgo) {
+                        const isUser = msg.sender === 'user';
+                        html += `
+                            <div style="display:flex; flex-direction:column; align-items:${isUser ? 'flex-end':'flex-start'}">
+                                <div class="chat-msg ${isUser ? 'chat-user' : 'chat-admin'}">${msg.text}</div>
+                                ${isUser ? `<span class="seen-status">${msg.seen ? 'Seen ✓✓' : 'Sent ✓'}</span>` : ''}
+                            </div>
+                        `;
+                    }
+                });
+                chatBox.innerHTML = html || '<div style="text-align:center; color:#94a3b8; font-size:11px;">No chats in last 7 days</div>';
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        function switchScreen(screenId) {
+            ['screen-home', 'screen-confirm', 'screen-battle'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function setEntryFee(fee) {
+            selectedFee = fee;
+            document.getElementById('fee-btn-50').className = "fee-btn" + (fee === 50 ? " active" : "");
+            document.getElementById('fee-btn-100').className = "fee-btn" + (fee === 100 ? " active" : "");
+        }
+
+        function openWalletModal() {
+            document.getElementById('wallet-modal').classList.remove('hidden');
+            updateDepositInstructions();
+            switchWalletTab('deposit');
+        }
+        function closeWalletModal() { document.getElementById('wallet-modal').classList.add('hidden'); }
+
+        function updateDepositInstructions() {
+            const method = document.getElementById('dep-method').value;
+            const box = document.getElementById('dep-instructions');
+            if(method === 'EasyPaisa') box.innerHTML = "Send amount to EasyPaisa: <b>03001234567</b>";
+            else if(method === 'JazzCash') box.innerHTML = "Send amount to JazzCash: <b>03007654321</b>";
+            else if(method === 'Binance ID') box.innerHTML = "Send amount to Binance Pay ID: <b>98765432</b>";
+            else box.innerHTML = "Send USDT to TRC20: <b>TXYZ123456789ABCDEFAWESOMESWAP</b>";
+        }
+
+        function switchWalletTab(tab) {
+            document.getElementById('tab-deposit-btn').className = "tab-btn" + (tab === 'deposit' ? " active" : "");
+            document.getElementById('tab-withdraw-btn').className = "tab-btn" + (tab === 'withdraw' ? " active" : "");
+            document.getElementById('tab-status-btn').className = "tab-btn" + (tab === 'status' ? " active" : "");
+
+            document.getElementById('wallet-deposit-section').classList.toggle('hidden', tab !== 'deposit');
+            document.getElementById('wallet-withdraw-section').classList.toggle('hidden', tab !== 'withdraw');
+            document.getElementById('wallet-status-section').classList.toggle('hidden', tab !== 'status');
+            if(tab === 'status') loadTransactions();
+        }
+
+        function submitDeposit() {
+            db.ref(`transactions/${userId}`).once('value', (snapshot) => {
+                let hasPending = false;
+                snapshot.forEach((child) => { if(child.val().status === 'Pending' || child.val().status === 'Processing') hasPending = true; });
+                if(hasPending) { alert("Aapki request pehle se pending/processing mein hai!"); return; }
+
+                const method = document.getElementById('dep-method').value;
+                const amount = parseFloat(document.getElementById('dep-amount').value);
+                if(!amount || amount <= 0) { alert("Enter valid amount"); return; }
+
+                db.ref(`transactions/${userId}`).push({
+                    type: 'Deposit', method, amount, status: 'Pending', timestamp: Date.now()
+                });
+                alert("Deposit request submitted!");
+                document.getElementById('dep-amount').value = '';
+            });
+        }
+
+        function submitWithdraw() {
+            db.ref(`transactions/${userId}`).once('value', (snapshot) => {
+                let hasPending = false;
+                snapshot.forEach((child) => { if(child.val().status === 'Pending' || child.val().status === 'Processing') hasPending = true; });
+                if(hasPending) { alert("Aapki request pehle se pending/processing mein hai!"); return; }
+
+                const method = document.getElementById('wd-method').value;
+                const account = document.getElementById('wd-account').value;
+                const amount = parseFloat(document.getElementById('wd-amount').value);
+                if(!account || !amount || amount <= 0) { alert("Fill all details"); return; }
+                if(amount > balance) { alert("Insufficient balance!"); return; }
+
+                balance -= amount;
+                document.getElementById('user-balance').innerText = balance;
+
+                db.ref(`transactions/${userId}`).push({
+                    type: 'Withdrawal', method, account, amount, status: 'Pending', timestamp: Date.now()
+                });
+                alert("Withdrawal request submitted!");
+                document.getElementById('wd-amount').value = '';
+                document.getElementById('wd-account').value = '';
+            });
+        }
+
+        function loadTransactions() {
+            const listEl = document.getElementById('transaction-list');
+            listEl.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px;">Loading...</div>';
+            db.ref(`transactions/${userId}`).orderByChild('timestamp').once('value', (snapshot) => {
+                listEl.innerHTML = '';
+                if(!snapshot.exists()) {
+                    listEl.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px;">No requests found</div>';
+                    return;
+                }
+                let html = '';
+                const twentyDaysAgo = Date.now() - (20 * 24 * 60 * 60 * 1000);
+                snapshot.forEach((child) => {
+                    const tx = child.val();
+                    if(tx.timestamp >= twentyDaysAgo) {
+                        html = `
+                            <div class="history-item">
+                                <div>
+                                    <strong style="color:${tx.type === 'Deposit' ? '#34d399':'#fb7185'}">${tx.type} (${tx.method})</strong>
+                                    <div style="color:#94a3b8; font-size:10px;">Rs. ${tx.amount}</div>
+                                </div>
+                                <span class="status-tag status-pending">${tx.status}</span>
+                            </div>
+                        ` + html;
+                    }
+                });
+                listEl.innerHTML = html || '<div style="text-align:center; color:#94a3b8; font-size:11px;">No recent requests</div>';
+            });
+        }
+
+        function openProfileModal() { document.getElementById('profile-modal').classList.remove('hidden'); document.getElementById('match-history-container').classList.add('hidden'); }
+        function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
+        function toggleMatchHistory() {
+            const container = document.getElementById('match-history-container');
+            if(container.classList.contains('hidden')) { container.classList.remove('hidden'); loadMatchHistory(); }
+            else container.classList.add('hidden');
+        }
+
+        function loadMatchHistory() {
+            const listEl = document.getElementById('match-history-list');
+            listEl.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px;">Loading history...</div>';
+            db.ref(`matches`).once('value', (snapshot) => {
+                listEl.innerHTML = '';
+                if(!snapshot.exists()) { listEl.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:11px;">No matches</div>'; return; }
+                let html = '';
+                const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
+                snapshot.forEach((child) => {
+                    const m = child.val();
+                    if(m.createdAt >= fifteenDaysAgo && (m.p1Id === userId || m.p2Id === userId)) {
+                        const isP1 = m.p1Id === userId;
+                        const myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
+                        const oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
+                        const isWin = myVotes >= oppVotes;
+                        html = `
+                            <div class="history-item">
+                                <div>
+                                    <strong>Match #${child.key.substring(6)}</strong>
+                                    <div style="color:#94a3b8; font-size:10px;">Votes: You (${myVotes}) vs Opp (${oppVotes})</div>
+                                </div>
+                                <span style="font-weight:bold; color:${isWin ? '#34d399':'#f43f5e'}">${isWin ? 'WIN' : 'LOSS'}</span>
+                            </div>
+                        ` + html;
+                    }
+                });
+                listEl.innerHTML = html || '<div style="text-align:center; color:#94a3b8; font-size:11px;">No matches</div>';
+            });
+        }
+
+        function startMatchFlow() {
+            if (balance < selectedFee) { alert("Insufficient balance!"); return; }
+            balance -= selectedFee;
+            document.getElementById('user-balance').innerText = balance;
+            document.getElementById('wait-fee').innerText = selectedFee;
+            document.getElementById('start-match-btn').classList.add('hidden');
+            document.getElementById('match-lobby-box').classList.remove('hidden');
+
+            const queueRef = db.ref(`queues/${selectedFee}`);
+            queueRef.once('value', (snapshot) => {
+                const queueData = snapshot.val();
+                if (!queueData) {
+                    isPlayerOne = true;
+                    currentMatchId = 'match_' + Date.now();
+                    queueRef.set({ matchId: currentMatchId, p1Id: userId, p1Name: userName, fee: selectedFee, createdAt: firebase.database.ServerValue.TIMESTAMP });
+                    listenForMatch(currentMatchId);
+                } else {
+                    isPlayerOne = false;
+                    currentMatchId = queueData.matchId;
+                    db.ref(`matches/${currentMatchId}`).update({ p2Id: userId, p2Name: userName, status: 'confirming', p1Confirmed: false, p2Confirmed: false, votesP1: 0, votesP2: 0, createdAt: firebase.database.ServerValue.TIMESTAMP });
+                    queueRef.remove();
+                    enterConfirmationScreen(currentMatchId);
+                }
+            });
+        }
+
+        function cancelQueue() {
+            balance += selectedFee;
+            document.getElementById('user-balance').innerText = balance;
+            if(currentMatchId) db.ref(`queues/${selectedFee}`).remove();
+            document.getElementById('match-lobby-box').classList.add('hidden');
+            document.getElementById('start-match-btn').classList.remove('hidden');
+        }
+
+        function listenForMatch(matchId) {
+            dbRef = db.ref(`matches/${matchId}`);
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.p2Id) enterConfirmationScreen(matchId);
+            });
+        }
+
+        function enterConfirmationScreen(matchId) {
+            currentMatchId = matchId;
+            switchScreen('screen-confirm');
+            document.getElementById('battle-match-id').innerText = `ID: #${matchId}`;
+            startCountdownTimer(1200);
+
+            db.ref(`matches/${matchId}`).on('value', (snapshot) => {
+                const match = snapshot.val();
+                if(!match) return;
+                document.getElementById('p1-name').innerText = match.p1Name || 'Player 1';
+                document.getElementById('p2-name').innerText = match.p2Name || 'Player 2';
+                if(match.p1Confirmed) { document.getElementById('p1-badge').className = "status-badge badge-confirmed"; document.getElementById('p1-badge').innerText = "Confirmed"; }
+                if(match.p2Confirmed) { document.getElementById('p2-badge').className = "status-badge badge-confirmed"; document.getElementById('p2-badge').innerText = "Confirmed"; }
+                if(match.p1Confirmed && match.p2Confirmed) enterBattleScreen(match);
+            });
+        }
+
+        function startCountdownTimer(durationSeconds) {
+            let timer = durationSeconds, minutes, seconds;
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+                document.getElementById('timer-display').innerText = minutes + ":" + seconds;
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    alert("Match cancelled due to timeout!");
+                    switchScreen('screen-home');
+                    document.getElementById('match-lobby-box').classList.add('hidden');
+                    document.getElementById('start-match-btn').classList.remove('hidden');
+                }
+            }, 1000);
+        }
+
+        function confirmMatchJoin() {
+            const field = isPlayerOne ? 'p1Confirmed' : 'p2Confirmed';
+            db.ref(`matches/${currentMatchId}`).update({ [field]: true });
+            const btn = document.getElementById('btn-confirm-join');
+            btn.disabled = true;
+            btn.style.background = "#1e293b";
+            btn.innerText = "Waiting for Opponent...";
+        }
+
+        function enterBattleScreen(match) {
+            if(timerInterval) clearInterval(timerInterval);
+            switchScreen('screen-battle');
+            document.getElementById('battle-p1-name').innerText = match.p1Name;
+            document.getElementById('battle-p2-name').innerText = match.p2Name;
+
+            db.ref(`matches/${currentMatchId}`).on('value', (snapshot) => {
+                const m = snapshot.val();
+                if(m) {
+                    document.getElementById('votes-p1').innerText = m.votesP1 || 0;
+                    document.getElementById('votes-p2').innerText = m.votesP2 || 0;
+                }
+            });
+        }
+
+        function castVote(playerKey) {
+            const voteField = playerKey === 'p1' ? 'votesP1' : 'votesP2';
+            db.ref(`matches/${currentMatchId}`).transaction((match) => {
+                if (match) match[voteField] = (match[voteField] || 0) + 1;
+                return match;
+            });
+            alert("Vote registered successfully!");
+        }
+
+        function shareMatchLink() {
+            const shareUrl = window.location.origin + window.location.pathname + "?match=" + currentMatchId;
+            navigator.clipboard.writeText(shareUrl);
+            alert("Match link copied!");
+        }
+
+        function searchMatch() {
+            const matchId = document.getElementById('search-match-id').value.trim();
+            if(!matchId) { alert("Enter Match ID"); return; }
+            db.ref(`matches/${matchId}`).once('value', (snapshot) => {
+                if(snapshot.exists()) { currentMatchId = matchId; enterBattleScreen(snapshot.val()); }
+                else alert("Match not found!");
+            });
         }
 
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const matchParam = urlParams.get('match');
-            if (matchParam) {
-                document.getElementById("matchSearchInput").value = window.location.href;
+            if(matchParam) {
+                db.ref(`matches/${matchParam}`).once('value', (snapshot) => {
+                    if(snapshot.exists()) { currentMatchId = matchParam; enterBattleScreen(snapshot.val()); }
+                });
             }
         };
-
-        function updateMatchDetails() {
-            let fee = Number(document.getElementById("matchEntryFee").value) || 0;
-            let infoText = document.getElementById("matchInfoText");
-            
-            if (fee === 50) {
-                infoText.innerText = "Win amount will be Rs. 95.";
-            } else if (fee === 100) {
-                infoText.innerText = "Win amount will be Rs. 190.";
-            } else {
-                infoText.innerText = "Please select an entry price.";
-            }
-        }
-
-        auth.onAuthStateChanged((user) => {
-            let mainBtn = document.getElementById("mainAccountBtn");
-            mainBtn.style.visibility = "visible";
-
-            if (user) {
-                currentUserId = user.uid;
-                currentUserName = user.displayName || localStorage.getItem("cached_username") || "User";
-                
-                mainBtn.innerText = "My Account";
-                document.getElementById("authModal").style.display = "none";
-                document.getElementById("matchPlayerName").value = currentUserName;
-                
-                let userRef = db.collection("users").doc(currentUserId);
-                userRef.get().then((doc) => {
-                    if (!doc.exists) {
-                        let generatedPlayerId = Math.floor(10000000 + Math.random() * 90000000).toString();
-                        userRef.set({ 
-                            balance: 0, 
-                            email: user.email, 
-                            name: currentUserName, 
-                            player_id: generatedPlayerId,
-                            status: "active" 
-                        });
-                        document.getElementById("displayPlayerId").innerText = generatedPlayerId;
-                        localStorage.setItem("cached_player_id", generatedPlayerId);
-                    } else {
-                        let data = doc.data();
-                        
-                        // ⚡ Account Suspension Check & Support Banner
-                        if (data.status === "suspended") {
-                            document.getElementById("walletBalance").innerText = "Rs. 0";
-                            document.getElementById("displayPlayerId").innerText = data.player_id || "N/A";
-                            
-                            let confirmed = confirm("⚠️ Your account has been suspended by the admin!\n\nClick 'OK' to open Support Chat and contact admin, or 'Cancel' to close.");
-                            if (confirmed) {
-                                openSupportModal();
-                            }
-                            return;
-                        }
-
-                        if(data.name) {
-                            currentUserName = data.name;
-                            localStorage.setItem("cached_username", currentUserName);
-                            document.getElementById("matchPlayerName").value = currentUserName;
-                        }
-                        if(data.balance !== undefined) {
-                            localStorage.setItem("cached_balance", data.balance);
-                            document.getElementById("walletBalance").innerText = "Rs. " + data.balance;
-                        }
-                        if(data.player_id) {
-                            document.getElementById("displayPlayerId").innerText = data.player_id;
-                            localStorage.setItem("cached_player_id", data.player_id);
-                        } else {
-                            let generatedPlayerId = Math.floor(10000000 + Math.random() * 90000000).toString();
-                            userRef.update({ player_id: generatedPlayerId, status: "active" });
-                            document.getElementById("displayPlayerId").innerText = generatedPlayerId;
-                            localStorage.setItem("cached_player_id", generatedPlayerId);
-                        }
-                    }
-                });
-
-                loadWalletBalance();
-                listenForUserLobbyAndMatches();
-                checkPendingRequestLocks();
-
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('match')) {
-                    searchMatchByLink();
-                }
-            } else {
-                currentUserId = null;
-                currentUserName = "User";
-                
-                localStorage.removeItem("cached_username");
-                localStorage.removeItem("cached_balance");
-                localStorage.removeItem("cached_player_id");
-
-                mainBtn.innerText = "Create Account";
-                document.getElementById("matchLobbyCard").style.display = "none";
-                document.getElementById("activeMatchesCard").style.display = "none";
-                if (matchesUnsubscribe) matchesUnsubscribe();
-                if (requestsUnsubscribe) requestsUnsubscribe();
-                if (matchTimersInterval) clearInterval(matchTimersInterval);
-
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('match')) {
-                    alert("Please create an account or login first to view and join this match!");
-                    toggleAuthMode('signup');
-                }
-            }
-        });
-
-        function checkPendingRequestLocks() {
-            if (!currentUserId) return;
-
-            db.collection("deposit_requests")
-                .where("userId", "==", currentUserId)
-                .where("status", "==", "pending")
-                .get()
-                .then((snapshot) => {
-                    let btn = document.getElementById("depositSubmitBtn");
-                    let notice = document.getElementById("depositLockNotice");
-                    if (!snapshot.empty) {
-                        btn.disabled = true;
-                        notice.style.display = "block";
-                    } else {
-                        btn.disabled = false;
-                        notice.style.display = "none";
-                    }
-                });
-
-            db.collection("withdrawal_requests")
-                .where("userId", "==", currentUserId)
-                .where("status", "==", "pending")
-                .get()
-                .then((snapshot) => {
-                    let btn = document.getElementById("withdrawSubmitBtn");
-                    let notice = document.getElementById("withdrawLockNotice");
-                    if (!snapshot.empty) {
-                        btn.disabled = true;
-                        notice.style.display = "block";
-                    } else {
-                        btn.disabled = false;
-                        notice.style.display = "none";
-                    }
-                });
-        }
-
-        function openSupportModal() {
-            if (!currentUserId) {
-                alert("Please login or create an account first to contact support!");
-                handleHeaderBtnClick();
-                return;
-            }
-            document.getElementById("supportModal").style.display = "flex";
-            loadUserChatMessages();
-        }
-
-        function closeSupportModal() {
-            document.getElementById("supportModal").style.display = "none";
-            if (chatUnsubscribe) chatUnsubscribe();
-        }
-
-function loadUserChatMessages() {
-            if (!currentUserId) return;
-            chatUnsubscribe = db.collection("support_chats")
-                .doc(currentUserId)
-                .collection("messages")
-                .orderBy("timestamp", "asc")
-                .onSnapshot((snapshot) => {
-                    let chatBox = document.getElementById("userChatBox");
-                    if (snapshot.empty) {
-                        chatBox.innerHTML = '<div style="text-align: center; color: #6b7280; font-size: 12px; padding: 10px;">No messages yet. Send a message to admin!</div>';
-                        return;
-                    }
-                    let html = "";
-                    snapshot.forEach((doc) => {
-                        let m = doc.data();
-                        let isSenderUser = m.sender === "user";
-                        html += `
-                            <div class="chat-msg ${isSenderUser ? 'chat-user' : 'chat-admin'}">
-                                <div>${m.text}</div>
-                            </div>
-                        `;
-                    });
-                    chatBox.innerHTML = html;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                });
-        }
-
-        function sendUserSupportMessage() {
-            let text = document.getElementById("userChatMessage").value.trim();
-            if (!text || !currentUserId) return;
-
-            let playerId = localStorage.getItem("cached_player_id") || "N/A";
-
-            db.collection("support_chats")
-                .doc(currentUserId)
-                .collection("messages")
-                .add({
-                    sender: "user",
-                    text: text,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    return db.collection("support_chats").doc(currentUserId).set({
-                        userName: currentUserName,
-                        playerId: playerId,
-                        lastMessage: text,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-                        unread: true
-                    }, { merge: true });
-                }).then(() => {
-                    document.getElementById("userChatMessage").value = "";
-                }).catch((err) => {
-                    alert("Error sending message: " + err);
-                });
-        }
-
-        function handleHeaderBtnClick() {
-            if (currentUserId) {
-                openAccountModal();
-            } else {
-                toggleAuthMode('signup');
-                document.getElementById("authModal").style.display = "flex";
-            }
-        }
-
-        function closeAuthModal() {
-            document.getElementById("authModal").style.display = "none";
-        }
-
-        function toggleAuthMode(mode) {
-            if (mode === 'signup') {
-                document.getElementById("authTitle").innerText = "Create New Account";
-                document.getElementById("signupFormContainer").style.display = "flex";
-                document.getElementById("loginFormContainer").style.display = "none";
-            } else {
-                document.getElementById("authTitle").innerText = "Login to votingBattle";
-                document.getElementById("signupFormContainer").style.display = "none";
-                document.getElementById("loginFormContainer").style.display = "flex";
-            }
-            document.getElementById("authModal").style.display = "flex";
-        }
-
-        function signupUser() {
-            let name = document.getElementById("signupName").value.trim();
-            let email = document.getElementById("signupEmail").value.trim();
-            let password = document.getElementById("signupPassword").value;
-
-            if (!name || !email || password.length < 6) {
-                alert("Please fill all fields properly (Password min 6 characters).");
-                return;
-            }
-
-            let generatedPlayerId = Math.floor(10000000 + Math.random() * 90000000).toString();
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    let user = userCredential.user;
-                    return user.updateProfile({ displayName: name }).then(() => {
-                        return db.collection("users").doc(user.uid).set({
-                            balance: 0,
-                            email: email,
-                            name: name,
-                            player_id: generatedPlayerId,
-                            status: "active"
-                        });
-                    });
-                })
-                .then(() => {
-                    alert("Account created successfully! Your Player ID is: " + generatedPlayerId);
-                    document.getElementById("authModal").style.display = "none";
-                })
-                .catch((error) => {
-                    alert("Sign Up Error: " + error.message);
-                });
-        }
-
-        function loginUser() {
-            let email = document.getElementById("loginEmail").value.trim();
-            let password = document.getElementById("loginPassword").value;
-
-            if (!email || !password) {
-                alert("Please enter email and password.");
-                return;
-            }
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    alert("Logged in successfully!");
-                    document.getElementById("authModal").style.display = "none";
-                })
-                .catch((error) => {
-                    alert("Login Error: " + error.message);
-                });
-        }
-
-        function handleForgotPassword() {
-            let email = document.getElementById("loginEmail").value.trim();
-            if (!email) {
-                email = prompt("Please enter your account email address for password reset:");
-            }
-
-            if (!email) {
-                alert("Please provide a valid email address.");
-                return;
-            }
-
-            auth.sendPasswordResetEmail(email)
-                .then(() => {
-                    alert("Password reset link sent successfully! Please check your email inbox or spam folder.");
-                })
-                .catch((error) => {
-                    alert("Error: " + error.message);
-                });
-        }
-
-        function logoutUser() {
-            let confirmLogout = confirm("Are you sure you want to log out?");
-            if (confirmLogout) {
-                auth.signOut().then(() => {
-                    window.location.reload();
-                });
-            }
-        }
-
-        let logoTapCount = 0;
-        let logoTapTimer = null;
-
-        function checkAdminSecretTap() {
-            logoTapCount++;
-            clearTimeout(logoTapTimer);
-            logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 2000);
-
-            if (logoTapCount === 6) {
-                logoTapCount = 0;
-                clearTimeout(logoTapTimer);
-                document.getElementById("adminPasswordModal").style.display = "flex";
-                document.getElementById("adminCodeInput").value = "";
-            }
-        }
-
-        function closeAdminModal() {
-            document.getElementById("adminPasswordModal").style.display = "none";
-        }
-
-        function verifyAdminCode() {
-            let inputVal = document.getElementById("adminCodeInput").value;
-            if (inputVal === "ali100") {
-                window.location.href = "admin.html";
-            } else {
-                alert("Incorrect Admin Code!");
-            }
-        }
-
-        function openAccountModal() {
-            if(!currentUserId) return;
-            document.getElementById("accountModal").style.display = "flex";
-            resetTabs();
-            switchTab('deposit');
-            loadWalletBalance();
-            checkPendingRequestLocks();
-        }
-
-        function closeAccountModal() {
-            document.getElementById("accountModal").style.display = "none";
-        }
-
-        function resetTabs() {
-            const tabs = ['deposit', 'withdraw', 'status', 'matches'];
-            tabs.forEach(t => {
-                document.getElementById(t + 'Tab').classList.remove('active');
-                document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
-            });
-        }
-
-        function switchTab(tabName) {
-            const tabs = ['deposit', 'withdraw', 'status', 'matches'];
-            tabs.forEach(t => {
-                const contentEl = document.getElementById(t + 'Tab');
-                const btnEl = document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1));
-                if (t === tabName) {
-                    contentEl.classList.add('active');
-                    btnEl.classList.add('active');
-                } else {
-                    contentEl.classList.remove('active');
-                    btnEl.classList.remove('active');
-                }
-            });
-
-            if (tabName === 'status') {
-                loadUserHistory();
-            } else if (tabName === 'matches') {
-                loadMatchHistory();
-            }
-        }
-
-        function updateDepositInfo() {
-            let method = document.getElementById("depositMethod").value;
-            let infoBox = document.getElementById("depositInfoText");
-            let senderInput = document.getElementById("senderNumber");
-
-            if(method === "EasyPaisa") {
-                infoBox.innerHTML = "Send Rs. 50+ to EasyPaisa: <strong>03001234567</strong> (Ali Raza)";
-                senderInput.placeholder = "Sender EasyPaisa Mobile Number";
-            } else if(method === "JazzCash") {
-                infoBox.innerHTML = "Send Rs. 50+ to JazzCash: <strong>03091234567</strong> (Ali Raza)";
-                senderInput.placeholder = "Sender JazzCash Mobile Number";
-            } else if(method === "Binance") {
-                infoBox.innerHTML = "Send USDT / Pay to Binance Pay ID: <strong>123456789</strong> or TRC20: <strong>TXXXXXX...</strong>";
-                senderInput.placeholder = "Your Binance Pay ID / Wallet Username";
-            }
-        }
-
-        function loadWalletBalance() {
-            if (!currentUserId) return;
-            db.collection("users").doc(currentUserId).get().then((doc) => {
-                if (doc.exists) {
-                    let data = doc.data();
-                    let balance = data.balance || 0;
-                    document.getElementById("walletBalance").innerText = "Rs. " + balance;
-                    localStorage.setItem("cached_balance", balance);
-                    if(data.name) {
-                        currentUserName = data.name;
-                        localStorage.setItem("cached_username", currentUserName);
-                        document.getElementById("matchPlayerName").value = currentUserName;
-                    }
-                    if(data.player_id) {
-                        document.getElementById("displayPlayerId").innerText = data.player_id;
-                        localStorage.setItem("cached_player_id", data.player_id);
-                    }
-                }
-            });
-        }
-
-        function loadUserHistory() {
-            if (!currentUserId) return;
-            
-            db.collection("deposit_requests")
-                .where("userId", "==", currentUserId)
-                .orderBy("timestamp", "desc")
-                .get()
-                .then((snapshot) => {
-                    allDeposits = [];
-                    snapshot.forEach((doc) => {
-                        allDeposits.push({ id: doc.id, ...doc.data() });
-                    });
-                    renderDepositsList();
-                }).catch((err) => {
-                    db.collection("deposit_requests")
-                        .where("userId", "==", currentUserId)
-                        .get()
-                        .then((snapshot) => {
-                            allDeposits = [];
-                            snapshot.forEach((doc) => {
-                                allDeposits.push({ id: doc.id, ...doc.data() });
-                            });
-                            allDeposits.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
-                            renderDepositsList();
-                        });
-                });
-
-            db.collection("withdrawal_requests")
-                .where("userId", "==", currentUserId)
-                .orderBy("timestamp", "desc")
-                .get()
-                .then((snapshot) => {
-                    allWithdrawals = [];
-                    snapshot.forEach((doc) => {
-                        allWithdrawals.push({ id: doc.id, ...doc.data() });
-                    });
-                    renderWithdrawalsList();
-                }).catch((err) => {
-                    db.collection("withdrawal_requests")
-                        .where("userId", "==", currentUserId)
-                        .get()
-                        .then((snapshot) => {
-                            allWithdrawals = [];
-                            snapshot.forEach((doc) => {
-                                allWithdrawals.push({ id: doc.id, ...doc.data() });
-                            });
-                            allWithdrawals.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
-                            renderWithdrawalsList();
-                        });
-                });
-        }
-
-        function renderDepositsList() {
-            let container = document.getElementById("depositHistoryList");
-            let showMoreBtn = document.getElementById("depositShowMoreBtn");
-            if (allDeposits.length === 0) {
-                container.innerHTML = '<div class="history-item">No deposit requests found.</div>';
-                showMoreBtn.style.display = "none";
-                return;
-            }
-
-            let displayList = showAllDeposits ? allDeposits : allDeposits.slice(0, 4);
-            let html = "";
-            displayList.forEach((d) => {
-                let dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : "Just now";
-                let badgeClass = "badge-pending";
-                if (d.status === "approved") badgeClass = "badge-approved";
-                if (d.status === "rejected") badgeClass = "badge-rejected";
-
-                html += `
-                    <div class="history-item">
-                        <div><strong>Method:</strong> ${d.method} | <strong>Amount:</strong> Rs. ${d.amount}</div>
-                        <div><strong>TRX ID:</strong> ${d.trxId}</div>
-                        <div><strong>Date:</strong> ${dateStr}</div>
-                        <div><strong>Status:</strong> <span class="${badgeClass}">${d.status.toUpperCase()}</span></div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-
-            if (allDeposits.length > 4) {
-                showMoreBtn.style.display = "block";
-                showMoreBtn.innerText = showAllDeposits ? "Show Less" : "Show More";
-            } else {
-                showMoreBtn.style.display = "none";
-            }
-        }
-
-function renderWithdrawalsList() {
-            let container = document.getElementById("withdrawHistoryList");
-            let showMoreBtn = document.getElementById("withdrawShowMoreBtn");
-            if (allWithdrawals.length === 0) {
-                container.innerHTML = '<div class="history-item">No withdrawal requests found.</div>';
-                showMoreBtn.style.display = "none";
-                return;
-            }
-
-            let displayList = showAllWithdrawals ? allWithdrawals : allWithdrawals.slice(0, 4);
-            let html = "";
-            displayList.forEach((d) => {
-                let dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : "Just now";
-                let badgeClass = "badge-pending";
-                if (d.status === "approved") badgeClass = "badge-approved";
-                if (d.status === "rejected") badgeClass = "badge-rejected";
-
-                html += `
-                    <div class="history-item">
-                        <div><strong>Method:</strong> ${d.method} | <strong>Amount:</strong> Rs. ${d.amount}</div>
-                        <div><strong>Account:</strong> ${d.accountNumber}</div>
-                        <div><strong>Date:</strong> ${dateStr}</div>
-                        <div><strong>Status:</strong> <span class="${badgeClass}">${d.status.toUpperCase()}</span></div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-
-            if (allWithdrawals.length > 4) {
-                showMoreBtn.style.display = "block";
-                showMoreBtn.innerText = showAllWithdrawals ? "Show Less" : "Show More";
-            } else {
-                showMoreBtn.style.display = "none";
-            }
-        }
-
-        function toggleShowMore(type) {
-            if (type === 'deposit') {
-                showAllDeposits = !showAllDeposits;
-                renderDepositsList();
-            } else if (type === 'withdraw') {
-                showAllWithdrawals = !showAllWithdrawals;
-                renderWithdrawalsList();
-            }
-        }
-
-        function loadMatchHistory() {
-            if (!currentUserId) return;
-
-            db.collection("active_matches")
-                .get()
-                .then((snapshot) => {
-                    let html = "";
-                    let userMatches = [];
-
-                    snapshot.forEach((doc) => {
-                        let d = doc.data();
-                        if (d.player1_id === currentUserId || d.player2_id === currentUserId) {
-                            userMatches.push({ id: doc.id, ...d });
-                        }
-                    });
-
-                    if (userMatches.length === 0) {
-                        document.getElementById("matchHistoryList").innerHTML = '<div class="history-item">No match history found.</div>';
-                        return;
-                    }
-
-                    userMatches.forEach((m) => {
-                        let isP1 = m.player1_id === currentUserId;
-                        let myName = isP1 ? m.player1_name : m.player2_name;
-                        let oppName = isP1 ? m.player2_name : m.player1_name;
-                        let myVotes = isP1 ? (m.player1_votes || 0) : (m.player2_votes || 0);
-                        let oppVotes = isP1 ? (m.player2_votes || 0) : (m.player1_votes || 0);
-                        let entryFee = m.entry_fee || 50;
-                        let winReward = entryFee === 50 ? 95 : 190;
-
-                        let statusBadge = "";
-                        let netAmountText = "";
-
-                        if (m.status === "live") {
-                            statusBadge = '<span class="badge-pending">IN PROGRESS</span>';
-                            netAmountText = `Entry Fee: Rs. ${entryFee}`;
-                        } else {
-                            if (myVotes > oppVotes) {
-                                statusBadge = '<span class="badge-win">WON 🎉</span>';
-                                netAmountText = `Prize: +Rs. ${winReward}`;
-                            } else if (oppVotes > myVotes) {
-                                statusBadge = '<span class="badge-loss">LOST ❌</span>';
-                                netAmountText = `Loss: -Rs. ${entryFee}`;
-                            } else {
-                                statusBadge = '<span class="badge-draw">DRAW 🤝</span>';
-                                netAmountText = `Refunded: Rs. ${entryFee}`;
-                            }
-                        }
-
-                        let dateStr = m.timestamp ? new Date(m.timestamp.toDate()).toLocaleString() : "Recent";
-
-                        html += `
-                            <div class="history-item">
-                                <div><strong>Battle:</strong> ${myName} vs ${oppName} | ${statusBadge}</div>
-                                <div><strong>Votes:</strong> ${myName} (${myVotes}) - ${oppName} (${oppVotes})</div>
-                                <div><strong>Result:</strong> ${netAmountText}</div>
-                                <div style="color:#6b7280; font-size:11px; margin-top:2px;">Date: ${dateStr}</div>
-                            </div>
-                        `;
-                    });
-
-                    document.getElementById("matchHistoryList").innerHTML = html;
-                }).catch((err) => {
-                    document.getElementById("matchHistoryList").innerHTML = '<div class="history-item">Error loading match history.</div>';
-                });
-        }
-
-        function listenForUserLobbyAndMatches() {
-            if (!currentUserId) return;
-            if (matchTimersInterval) clearInterval(matchTimersInterval);
-
-            requestsUnsubscribe = db.collection("match_requests")
-                .where("creator_id", "==", currentUserId)
-                .where("status", "==", "waiting")
-                .onSnapshot((snapshot) => {
-                    if (!snapshot.empty) {
-                        let reqData = snapshot.docs[0].data();
-                        let lobbyCard = document.getElementById("matchLobbyCard");
-                        lobbyCard.style.display = "block";
-                        
-                        document.getElementById("matchLobbyList").innerHTML = `
-                            <div class="match-item">
-                                <span class="match-info">${reqData.creator_name} VS Waiting...</span>
-                                <div style="color: #d97706; font-weight: 600; font-size: 12px;">Searching for an opponent (Entry: Rs. ${reqData.entry_fee})...</div>
-                            </div>
-                        `;
-                    }
-                });
-
-            matchesUnsubscribe = db.collection("active_matches")
-                .onSnapshot((snapshot) => {
-                    let liveHtml = "";
-                    let lobbyHtml = "";
-                    let foundLive = false;
-                    let foundLobby = false;
-
-                    snapshot.forEach((doc) => {
-                        let data = doc.data();
-                        if (data.player1_id === currentUserId || data.player2_id === currentUserId) {
-                            
-                            if (data.status === "pending_join") {
-                                let createdAt = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
-                                let expiryTime = createdAt + (20 * 60 * 1000);
-                                let timeLeft = expiryTime - Date.now();
-
-                                if (timeLeft <= 0) {
-                                    cancelAndRefundMatch(doc.id, data.entry_fee, data.player1_id, data.player2_id);
-                                    return;
-                                }
-
-                                foundLobby = true;
-                                let isP1 = data.player1_id === currentUserId;
-                                let hasConfirmed = isP1 ? data.player1_confirmed : data.player2_confirmed;
-                                let p1Name = data.player1_name;
-                                let p2Name = data.player2_name;
-
-                                let mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                                let secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-                                lobbyHtml += `
-                                    <div class="match-item" id="lobby_item_${doc.id}" data-id="${doc.id}" data-expiry="${expiryTime}">
-                                        <span class="match-info">${p1Name} VS ${p2Name}</span>
-                                        <span class="match-timer">Time to Join: ${mins}m ${secs}s</span>
-                                        ${hasConfirmed 
-                                            ? '<div style="color: #059669; font-weight: bold; margin-top: 6px;">Joined! Waiting for opponent to tap Join Match...</div>'
-                                            : `<button class="btn btn-match" style="padding: 10px; font-size: 13px; margin-top: 6px;" onclick="confirmJoinMatch('${doc.id}')">Join Match</button>`
-                                        }
-                                    </div>
-                                `;
-                            } else if (data.status === "live") {
-                                let createdAt = data.timestamp ? data.timestamp.toDate().getTime() : Date.now();
-                                let expiryTime = createdAt + (2 * 60 * 60 * 1000);
-                                let timeLeft = expiryTime - Date.now();
-
-                                if (timeLeft <= 0) {
-                                    db.collection("active_matches").doc(doc.id).update({ status: "ended" });
-                                    return;
-                                }
-
-                                foundLive = true;
-                                let p1Name = data.player1_name || "Player 1";
-                                let p2Name = data.player2_name || "Player 2";
-                                let p1Votes = data.player1_votes || 0;
-                                let p2Votes = data.player2_votes || 0;
-
-                                let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                                let minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                                let seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-                                let timerText = `Time Left: ${hours}h ${minutes}m ${seconds}s`;
-
-                                liveHtml += `
-                                    <div class="match-item" id="match_card_${doc.id}" data-id="${doc.id}" data-expiry="${expiryTime}">
-                                        <span class="match-info">Live Battle: ${p1Name} vs ${p2Name}</span>
-                                        <span class="match-timer" id="timer_${doc.id}">${timerText}</span>
-                                        
-                                        <div class="vote-row">
-                                            <span id="p1_text_${doc.id}">${p1Name} (<span id="p1_votes_${doc.id}">${p1Votes}</span> Votes)</span>
-                                            <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 1)">Vote A</button>
-                                        </div>
-
-                                        <div class="vote-row">
-                                            <span id="p2_text_${doc.id}">${p2Name} (<span id="p2_votes_${doc.id}">${p2Votes}</span> Votes)</span>
-                                            <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 2)">Vote B</button>
-                                        </div>
-
-                                        <button class="btn btn-share" onclick="shareMatchLink('${doc.id}')">Share Match Link</button>
-                                    </div>
-                                `;
-                            }
-                        }
-                    });
-
-                    let lobbyCard = document.getElementById("matchLobbyCard");
-                    if (foundLobby) {
-                        lobbyCard.style.display = "block";
-                        document.getElementById("matchLobbyList").innerHTML = lobbyHtml;
-                    } else if (!foundLobby && document.querySelectorAll("#matchLobbyList .match-item").length === 0) {
-                        lobbyCard.style.display = "none";
-                    }
-
-                    let matchesCard = document.getElementById("activeMatchesCard");
-                    if (foundLive) {
-                        matchesCard.style.display = "block";
-                        document.getElementById("startedMatchesList").innerHTML = liveHtml;
-                    } else {
-                        matchesCard.style.display = "none";
-                    }
-                });
-
-            matchTimersInterval = setInterval(() => {
-                let lobbyItems = document.querySelectorAll("#matchLobbyList .match-item");
-                lobbyItems.forEach((item) => {
-                    let expiryTime = Number(item.getAttribute("data-expiry"));
-                    if (!expiryTime) return;
-
-                    let timeLeft = expiryTime - Date.now();
-                    let timerEl = item.querySelector(".match-timer");
-
-                    if (timeLeft <= 0) {
-                        item.remove();
-                    } else if (timerEl) {
-                        let mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                        let secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
-                        timerEl.innerText = `Time to Join: ${mins}m ${secs}s`;
-                    }
-                });
-
-                let matchItems = document.querySelectorAll("#startedMatchesList .match-item");
-                matchItems.forEach((item) => {
-                    let expiryTime = Number(item.getAttribute("data-expiry"));
-                    let matchId = item.getAttribute("data-id");
-                    if (!expiryTime) return;
-
-                    let timeLeft = expiryTime - Date.now();
-                    let timerEl = item.querySelector(".match-timer");
-
-                    if (timeLeft <= 0) {
-                        item.remove();
-                        if (matchId) {
-                            db.collection("active_matches").doc(matchId).update({ status: "ended" });
-                        }
-                    } else if (timerEl) {
-                        let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        let minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                        let seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-                        timerEl.innerText = `Time Left: ${hours}h ${minutes}m ${seconds}s`;
-                    }
-                });
-            }, 1000);
-        }
-
-        async function confirmJoinMatch(matchId) {
-            let matchRef = db.collection("active_matches").doc(matchId);
-            db.runTransaction(async (transaction) => {
-                let doc = await transaction.get(matchRef);
-                if (!doc.exists) throw "Match does not exist!";
-                let data = doc.data();
-
-                let isP1 = data.player1_id === currentUserId;
-                let updateData = {};
-
-                if (isP1) {
-                    updateData.player1_confirmed = true;
-                } else {
-                    updateData.player2_confirmed = true;
-                }
-
-                let p1Conf = isP1 ? true : data.player1_confirmed;
-                let p2Conf = !isP1 ? true : data.player2_confirmed;
-
-                if (p1Conf && p2Conf) {
-                    updateData.status = "live";
-                }
-
-                transaction.update(matchRef, updateData);
-            }).then(() => {
-                alert("Match joined successfully!");
-            }).catch((err) => {
-                alert("Error: " + err);
-            });
-        }
-
-        async function cancelAndRefundMatch(matchId, entryFee, p1Id, p2Id) {
-            let matchRef = db.collection("active_matches").doc(matchId);
-            let doc = await matchRef.get();
-            if (!doc.exists || doc.data().status !== "pending_join") return;
-
-            let p1Ref = db.collection("users").doc(p1Id);
-            let p2Ref = db.collection("users").doc(p2Id);
-
-            db.runTransaction(async (transaction) => {
-                let p1Doc = await transaction.get(p1Ref);
-                let p2Doc = await transaction.get(p2Ref);
-
-                if (p1Doc.exists) {
-                    transaction.update(p1Ref, { balance: (p1Doc.data().balance || 0) + Number(entryFee) });
-                }
-                if (p2Doc.exists) {
-                    transaction.update(p2Ref, { balance: (p2Doc.data().balance || 0) + Number(entryFee) });
-                }
-                transaction.update(matchRef, { status: "cancelled_expired" });
-            });
-        }
-
-        function searchMatchByLink() {
-            if (!currentUserId) {
-                alert("Please create an account or login first to view this match!");
-                toggleAuthMode('signup');
-                return;
-            }
-
-            let inputVal = document.getElementById("matchSearchInput").value.trim();
-            let resultContainer = document.getElementById("searchedMatchResult");
-            
-            if (!inputVal) {
-                alert("Please paste a valid Match Link!");
-                return;
-            }
-
-            let matchId = inputVal;
-            if (inputVal.includes("?match=")) {
-                matchId = inputVal.split("?match=")[1];
-            }
-
-            resultContainer.innerHTML = "<p style='font-size:12px; color:#6b7280; margin-top:10px;'>Searching battle...</p>";
-
-            db.collection("active_matches").doc(matchId).get().then((doc) => {
-                if (!doc.exists || doc.data().status !== "live") {
-                    resultContainer.innerHTML = "<p style='font-size:13px; color:#dc2626; font-weight:600; margin-top:10px;'>Match not found or already ended!</p>";
-                    return;
-                }
-
-                let data = doc.data();
-                let p1Name = data.player1_name || "Player 1";
-                let p2Name = data.player2_name || "Player 2";
-                let p1Votes = data.player1_votes || 0;
-                let p2Votes = data.player2_votes || 0;
-
-                resultContainer.innerHTML = `
-                    <div class="match-item" style="margin-top: 10px; text-align: left;">
-                        <span class="match-info">Live Battle: ${p1Name} vs ${p2Name}</span>
-                        
-                        <div class="vote-row">
-                            <span>${p1Name} (<span id="search_p1_votes_${doc.id}">${p1Votes}</span> Votes)</span>
-                            <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 1)">Vote A</button>
-                        </div>
-
-                        <div class="vote-row">
-                            <span>${p2Name} (<span id="search_p2_votes_${doc.id}">${p2Votes}</span> Votes)</span>
-                            <button class="btn btn-vote" style="width: auto; padding: 6px 12px; font-size: 12px;" onclick="votePlayer('${doc.id}', 2)">Vote B</button>
-                        </div>
-                    </div>
-                `;
-            }).catch((err) => {
-                resultContainer.innerHTML = "<p style='font-size:13px; color:#dc2626; margin-top:10px;'>Error fetching match details.</p>";
-            });
-        }
-function votePlayer(matchId, playerNum) {
-            if (!currentUserId) {
-                alert("Please login first to cast your vote!");
-                handleHeaderBtnClick();
-                return;
-            }
-
-            if (localStorage.getItem("voted_" + matchId)) {
-                alert("You have already voted from this device!");
-                return;
-            }
-
-            let p1Span = document.getElementById("p1_votes_" + matchId);
-            let p2Span = document.getElementById("p2_votes_" + matchId);
-            let searchP1Span = document.getElementById("search_p1_votes_" + matchId);
-            let searchP2Span = document.getElementById("search_p2_votes_" + matchId);
-
-            if (playerNum === 1) {
-                if (p1Span) p1Span.innerText = Number(p1Span.innerText) + 1;
-                if (searchP1Span) searchP1Span.innerText = Number(searchP1Span.innerText) + 1;
-            } else {
-                if (p2Span) p2Span.innerText = Number(p2Span.innerText) + 1;
-                if (searchP2Span) searchP2Span.innerText = Number(searchP2Span.innerText) + 1;
-            }
-
-            localStorage.setItem("voted_" + matchId, "true");
-
-            let matchRef = db.collection("active_matches").doc(matchId);
-            
-            db.runTransaction((transaction) => {
-                return transaction.get(matchRef).then((doc) => {
-                    if (!doc.exists) throw "Match does not exist!";
-                    let data = doc.data();
-                    if (playerNum === 1) {
-                        transaction.update(matchRef, { player1_votes: (data.player1_votes || 0) + 1 });
-                    } else {
-                        transaction.update(matchRef, { player2_votes: (data.player2_votes || 0) + 1 });
-                    }
-                });
-            }).catch((err) => {
-                alert("Error casting vote: " + err);
-            });
-        }
-
-        function shareMatchLink(matchId) {
-            let shareUrl = window.location.origin + window.location.pathname + "?match=" + matchId;
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                alert("Match link copied to clipboard!");
-            });
-        }
-
-        function shareWebsiteLink() {
-            navigator.clipboard.writeText(window.location.origin + window.location.pathname).then(() => {
-                alert("Website link copied to clipboard!");
-            });
-        }
-
-        async function findMatch() {
-            if (!currentUserId) {
-                alert("Please create an account or login first to find a match.");
-                handleHeaderBtnClick();
-                return;
-            }
-
-            let activeMatchSnap = await db.collection("active_matches").get();
-            let alreadyHasMatch = false;
-            activeMatchSnap.forEach((doc) => {
-                let m = doc.data();
-                if ((m.status === "live" || m.status === "pending_join") && (m.player1_id === currentUserId || m.player2_id === currentUserId)) {
-                    alreadyHasMatch = true;
-                }
-            });
-
-            if (alreadyHasMatch) {
-                alert("You already have an active match or lobby waiting! You can only play one match at a time.");
-                return;
-            }
-
-            let entrySelect = document.getElementById("matchEntryFee");
-            let selectedFee = Number(entrySelect.value);
-
-            if (!selectedFee || (selectedFee !== 50 && selectedFee !== 100)) {
-                alert("Please select an entry price (Rs. 50 or Rs. 100)!");
-                return;
-            }
-
-            let customPlayerName = document.getElementById("matchPlayerName").value.trim();
-            if (!customPlayerName) {
-                alert("Please enter your player name!");
-                document.getElementById("matchPlayerName").focus();
-                return;
-            }
-
-            db.collection("users").doc(currentUserId).get().then(async (doc) => {
-                let currentBalance = doc.data().balance || 0;
-                
-                if (currentBalance < selectedFee) {
-                    alert("Insufficient wallet balance! Please deposit first.");
-                    openAccountModal();
-                    return;
-                }
-
-                let waitingQuery = await db.collection("match_requests")
-                    .where("entry_fee", "==", selectedFee)
-                    .where("status", "==", "waiting")
-                    .limit(1)
-                    .get();
-
-                if (!waitingQuery.empty) {
-                    let reqDoc = waitingQuery.docs[0];
-                    let reqData = reqDoc.data();
-
-                    if (reqData.creator_id === currentUserId) {
-                        alert("You already have a waiting request. Please wait for an opponent.");
-                        return;
-                    }
-
-                    db.collection("users").doc(currentUserId).update({ balance: currentBalance - selectedFee });
-
-                    db.collection("active_matches").add({
-                        player1_id: reqData.creator_id,
-                        player1_name: reqData.creator_name,
-                        player1_confirmed: false,
-                        player2_id: currentUserId,
-                        player2_name: customPlayerName,
-                        player2_confirmed: false,
-                        entry_fee: Number(selectedFee),
-                        status: "pending_join",
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    }).then(() => {
-                        db.collection("match_requests").doc(reqDoc.id).delete();
-                        alert("Opponent found! Please check your lobby below and tap 'Join Match' within 20 minutes.");
-                        loadWalletBalance();
-                    });
-
-                } else {
-                    db.collection("users").doc(currentUserId).update({ balance: currentBalance - selectedFee });
-
-                    db.collection("match_requests").add({
-                        creator_id: currentUserId,
-                        creator_name: customPlayerName,
-                        entry_fee: selectedFee,
-                        status: "waiting",
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    }).then(() => {
-                        document.getElementById("searchStatus").innerText = "Match created! Waiting for an opponent...";
-                        loadWalletBalance();
-                    });
-                }
-            });
-        }
-
-        function submitDeposit() {
-            if (!currentUserId) return;
-            let method = document.getElementById('depositMethod').value;
-            let amount = Number(document.getElementById('depositAmount').value);
-            let trxId = document.getElementById('trxId').value;
-            let sender = document.getElementById('senderNumber').value;
-
-            if(!trxId || amount < 50) {
-                alert("Please enter a valid Amount (Min 50) and Transaction ID / Hash!");
-                return;
-            }
-
-            db.collection("deposit_requests").add({
-                userId: currentUserId,
-                method: method,
-                amount: amount,
-                trxId: trxId,
-                senderNumber: sender,
-                status: "pending",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                alert("Deposit request submitted successfully!");
-                document.getElementById('depositAmount').value = '';
-                document.getElementById('trxId').value = '';
-                document.getElementById('senderNumber').value = '';
-                closeAccountModal();
-                checkPendingRequestLocks();
-            });
-        }
-
-        function submitWithdrawal() {
-            if (!currentUserId) return;
-            let method = document.getElementById('withdrawMethod').value;
-            let amount = Number(document.getElementById('withdrawAmount').value);
-            let number = document.getElementById('withdrawNumber').value;
-            let title = document.getElementById('accountTitle').value;
-
-            if(!number || amount < 95) {
-                alert("Minimum withdrawal amount is Rs. 95!");
-                return;
-            }
-
-            db.collection("users").doc(currentUserId).get().then((doc) => {
-                let currentBalance = doc.data().balance || 0;
-                if (currentBalance < amount) {
-                    alert("Insufficient balance in your wallet!");
-                    return;
-                }
-
-                db.collection("users").doc(currentUserId).update({ balance: currentBalance - amount });
-
-                db.collection("withdrawal_requests").add({
-                    userId: currentUserId,
-                    method: method,
-                    amount: amount,
-                    accountNumber: number,
-                    accountTitle: title,
-                    status: "pending",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    alert("Withdrawal request sent successfully!");
-                    loadWalletBalance();
-                    closeAccountModal();
-                    checkPendingRequestLocks();
-                });
-            });
-        }
     </script>
 </body>
 </html>

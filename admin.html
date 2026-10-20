@@ -3,279 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>votingBattle - Admin Dashboard</title>
+    <title>VoteBattle - Admin Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #020617; color: #f8fafc; min-height: 100vh; padding: 16px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid #1e293b; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; }
+        .logo { font-weight: 900; font-size: 18px; color: #38bdf8; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-        body {
-            background-color: #f1f5f9;
-            color: #0f172a;
-            padding-bottom: 40px;
-        }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        h2 { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #38bdf8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+        
+        input, select { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; margin-bottom: 8px; outline: none; }
+        input:focus { border-color: #38bdf8; }
 
-        header {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            color: white;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+        .btn { background: #38bdf8; color: #020617; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-secondary { background: #1e293b; color: #f8fafc; border: 1px solid #334155; }
 
-        header h1 {
-            font-size: 18px;
-            font-weight: 800;
-        }
+        .item-box { background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .hidden { display: none !important; }
 
-        .back-btn {
-            background: rgba(255, 255, 255, 0.12);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 7px 14px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        main {
-            max-width: 650px;
-            margin: 20px auto;
-            padding: 0 16px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-            border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
-        }
-
-        .card h2 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 12px;
-            border-bottom: 1.5px solid #f1f5f9;
-            padding-bottom: 8px;
-        }
-
-        .item-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            font-size: 13px;
-        }
-
-        .item-box div {
-            margin-bottom: 4px;
-        }
-
-        .btn {
-            padding: 9px 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            color: white;
-            margin-top: 6px;
-            margin-right: 6px;
-        }
-
-        .btn-approve { background: linear-gradient(135deg, #10b981, #059669); }
-        .btn-reject { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-search { background: linear-gradient(135deg, #6366f1, #4f46e5); width: auto; padding: 10px 16px; margin-top: 0; }
-        .btn-select { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .btn-bot { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-
-        .admin-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .admin-tab-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: white;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            color: #64748b;
-            border: 1px solid #e2e8f0;
-        }
-
-        .admin-tab-btn.active {
-            background: #4f46e5;
-            color: white;
-            border-color: #4f46e5;
-        }
-
-        .admin-section {
-            display: none;
-        }
-
-        .admin-section.active {
-            display: block;
-        }
-
-        .show-more-btn {
-            background: none;
-            border: none;
-            color: #4f46e5;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            text-align: center;
-            width: 100%;
-            padding: 8px;
-            margin-top: 6px;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 11px;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 13px;
-            outline: none;
-            background: white;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-
-        .badge-active { color: #10b981; font-weight: 700; }
-        .badge-suspended { color: #ef4444; font-weight: 700; }
-
-        .selection-banner {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-            font-size: 13px;
-            color: #1e40af;
-            display: none;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 450px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+        
+        .chat-msg { padding: 8px 12px; border-radius: 8px; font-size: 12px; max-width: 80%; margin-bottom: 6px; }
+        .chat-user { background: #1e293b; color: #f8fafc; align-self: flex-start; }
+        .chat-admin { background: #7c3aed; color: #fff; align-self: flex-end; }
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>votingBattle - Admin Control Panel</h1>
-        <a href="index.html" class="back-btn">Go to App</a>
-    </header>
-
-    <main>
-        <!-- Navigation Tabs -->
-        <div class="admin-tabs">
-            <button class="admin-tab-btn active" id="tabBtnDeposit" onclick="switchAdminTab('deposit')">💰 Deposits</button>
-            <button class="admin-tab-btn" id="tabBtnWithdraw" onclick="switchAdminTab('withdraw')">🏦 Withdraws</button>
+    <div class="header">
+        <div class="logo">VoteBattle Admin Panel</div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">Back to Home</button>
+            <button class="btn btn-danger" onclick="openSuspendedModal()">Suspended Accounts</button>
         </div>
+    </div>
 
-        <!-- Create Bot Account Section -->
-        <div class="card" style="border-color: #8b5cf6; background: #faf5ff;">
-            <h2>🤖 Create Bot Account & Start Match</h2>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <label style="font-size: 12px; font-weight: 600; color: #475569;">1. Select Entry Price:</label>
-                <select id="botEntryFee" onchange="filterWaitingUsersForBot()">
-                    <option value="50">Rs. 50 Match</option>
-                    <option value="100">Rs. 100 Match</option>
+    <!-- Bot Match Creator Card -->
+    <div class="card" style="border: 1px solid #38bdf8;">
+        <h2>Create Bot / Fake Match</h2>
+        <div class="grid-2" style="margin-bottom:0;">
+            <div>
+                <label style="font-size:11px; color:#94a3b8;">Select Fee</label>
+                <select id="bot-fee">
+                    <option value="50">Rs. 50</option>
+                    <option value="100">Rs. 100</option>
                 </select>
-
-                <label style="font-size: 12px; font-weight: 600; color: #475569;">2. Enter Bot Name:</label>
-                <input type="text" id="botNameInput" placeholder="Enter Bot Name...">
-
-                <label style="font-size: 12px; font-weight: 600; color: #475569;">3. Select Waiting User:</label>
-                <select id="botUserSelect">
-                    <option value="" disabled selected>-- Loading waiting users --</option>
-                </select>
-
-                <button onclick="startBotMatchWithUser()" class="btn btn-bot" style="margin-top: 6px; padding: 12px;">Start Bot Match Lobby 🚀</button>
+            </div>
+            <div>
+                <label style="font-size:11px; color:#94a3b8;">Bot / Opponent Name</label>
+                <input type="text" id="bot-name" placeholder="Enter bot name...">
             </div>
         </div>
+        <button class="btn btn-success" onclick="createBotMatch()" style="width:100%; margin-top:8px;">Create & Send to Waiting</button>
+    </div>
 
-        <!-- Live Bot Matches -->
-        <div class="card" style="border-color: #10b981;">
-            <h2>🕹️ Live Bot Matches & Lobbies</h2>
-            <div id="adminBotMatchesList">
-                <div class="item-box">Loading bot matches...</div>
-            </div>
-        </div>
+    <!-- 1 Day Report Card -->
+    <div class="card">
+        <h2>Last 1 Day Report (Stats)</h2>
+        <div id="one-day-report" style="font-size:12px; color:#94a3b8; line-height:1.6;">Loading report...</div>
+    </div>
 
-        <!-- Search & Manage User Account (With Balance Edit Option) -->
+    <div class="grid-2">
+        <!-- Deposit Requests -->
         <div class="card">
-            <h2>🔍 Search & Edit User Account</h2>
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <input type="text" id="searchPlayerId" placeholder="Enter 8-digit Player ID...">
-                <button onclick="searchUserById()" class="btn btn-search">Search</button>
-            </div>
-            <div id="userSearchResult" style="margin-top: 12px;"></div>
+            <h2>Deposit Requests</h2>
+            <div id="deposit-list">Loading...</div>
+            <button id="dep-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('deposit')" style="width:100%; margin-top:8px;">Show More</button>
         </div>
 
-        <!-- Suspended Accounts -->
-        <div class="card" style="border-color: #fca5a5;">
-            <h2>🚫 Suspended Accounts List</h2>
-            <div id="suspendedUsersList">
-                <div class="item-box">Loading suspended accounts...</div>
-            </div>
-        </div>
-
-        <!-- Deposit Requests Section (With Show More) -->
-        <div class="card admin-section active" id="depositSection">
-            <h2>Pending Deposit Requests</h2>
-            <div id="depositRequestsList">
-                <div class="item-box">Loading deposits...</div>
-            </div>
-            <button id="depositShowMoreBtn" class="show-more-btn" onclick="toggleShowMore('deposit')" style="display: none;">Show More</button>
-        </div>
-
-        <!-- Withdrawal Requests Section (With Show More) -->
-        <div class="card admin-section" id="withdrawSection">
-            <h2>Pending Withdrawal Requests</h2>
-            <div id="withdrawRequestsList">
-                <div class="item-box">Loading withdrawals...</div>
-            </div>
-            <button id="withdrawShowMoreBtn" class="show-more-btn" onclick="toggleShowMore('withdraw')" style="display: none;">Show More</button>
-        </div>
-
-        <!-- Selection Banner -->
-        <div class="selection-banner" id="matchSelectionBanner">
-            <div><strong>Selected Player 1:</strong> <span id="selectedP1Name">None</span></div>
-            <button onclick="cancelSelection()" style="background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer;">Cancel</button>
-        </div>
-
-        <!-- Match Requests Pools -->
+        <!-- Withdrawal Requests -->
         <div class="card">
-            <h2>Rs. 50 Match Requests (Waiting Line)</h2>
-            <div id="matchRequests50"><div class="item-box">Loading requests...</div></div>
+            <h2>Withdrawal Requests</h2>
+            <div id="withdraw-list">Loading...</div>
+            <button id="wd-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('withdraw')" style="width:100%; margin-top:8px;">Show More</button>
         </div>
+    </div>
 
+    <div class="grid-2">
+        <!-- Matches 50 -->
         <div class="card">
-            <h2>Rs. 100 Match Requests (Waiting Line)</h2>
-            <div id="matchRequests100"><div class="item-box">Loading requests...</div></div>
+            <h2>Matches (Rs. 50 Fee)</h2>
+            <div id="matches-50-list">Loading...</div>
         </div>
-    </main>
+        <!-- Matches 100 -->
+        <div class="card">
+            <h2>Matches (Rs. 100 Fee)</h2>
+            <div id="matches-100-list">Loading...</div>
+        </div>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <div class="grid-2">
+        <!-- User Management -->
+        <div class="card">
+            <h2>User Management, Votes & Match History</h2>
+            <input type="text" id="search-user-id" placeholder="Enter 8-Digit User ID...">
+            <button class="btn" onclick="searchUser()" style="width:100%; margin-bottom:10px;">Search User</button>
+            
+            <div id="user-info-box" class="hidden" style="background:#020617; padding:10px; border-radius:8px; border:1px solid #1e293b; font-size:12px;">
+                <p style="margin-bottom:4px;">ID: <span id="u-id" style="color:#38bdf8;">---</span></p>
+                <p style="margin-bottom:4px;">Balance: Rs. <span id="u-bal">0</span></p>
+                <p style="margin-bottom:6px; color:#c084fc;">Total Votes Cast: <span id="u-high-votes">0</span></p>
+                <input type="number" id="new-user-bal" placeholder="New Balance...">
+                <button class="btn btn-success" onclick="updateUserBalance()" style="width:100%; margin-bottom:6px;">Change Balance</button>
+                <button id="suspend-btn" class="btn btn-danger" onclick="toggleAccountSuspension()" style="width:100%;">Suspend Account</button>
+            </div>
+        </div>
+
+        <!-- Support Chats -->
+        <div class="card">
+            <h2>Support Chats</h2>
+            <div id="support-users-list" style="max-height: 220px; overflow-y: auto;">Loading chats...</div>
+            <button id="chat-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('chat')" style="width:100%; margin-top:8px;">Show More</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="suspended-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+                <h3 style="font-size:15px; color:#ef4444;">Suspended Accounts</h3>
+                <button class="btn btn-secondary" onclick="closeSuspendedModal()">✕</button>
+            </div>
+            <div id="suspended-list-container">Loading...</div>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+                <h3 id="chat-modal-title" style="font-size:15px;">Chat with User</h3>
+                <button class="btn btn-secondary" onclick="closeChatModal()">✕</button>
+            </div>
+            <div id="admin-chat-box" style="height:220px; overflow-y:auto; background:#020617; border:1px solid #1e293b; border-radius:8px; padding:10px; margin-bottom:10px; display:flex; flex-direction:column;"></div>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="admin-reply-input" placeholder="Type reply..." style="margin-bottom:0;">
+                <button class="btn" onclick="sendAdminReply()">Send</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -287,425 +161,288 @@
             messagingSenderId: "572901936550",
             appId: "1:572901936550:web:a3918de85c585d51975367"
         };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        db.enablePersistence().catch((err) => {});
-
-        let selectedPlayer1 = null;
-        let allWaitingRequests = [];
-        let allPendingDeposits = [];
-        let allPendingWithdrawals = [];
         let showAllDeposits = false;
-        let showAllWithdrawals = false;
+        let showAllWithdraws = false;
+        let showAllChats = false;
+        let activeChatUserId = null;
+        let searchedUserId = null;
 
         window.onload = function() {
-            loadMatchRequests();
-            loadDepositRequests();
-            loadWithdrawRequests();
-            loadSuspendedUsers();
-            loadAdminBotMatches();
-            listenForWaitingUsers();
+            loadAllDeposits();
+            loadAllWithdrawals();
+            loadMatches();
+            loadSupportChatsList();
+            loadOneDayReport();
         };
 
-        function switchAdminTab(tabName) {
-            let depBtn = document.getElementById("tabBtnDeposit");
-            let witBtn = document.getElementById("tabBtnWithdraw");
-            let depSec = document.getElementById("depositSection");
-            let witSec = document.getElementById("withdrawSection");
+        // --- Create Bot Match ---
+        function createBotMatch() {
+            const fee = parseInt(document.getElementById('bot-fee').value);
+            const botName = document.getElementById('bot-name').value.trim();
+            if(!botName) { alert("Enter bot name"); return; }
 
-            if (tabName === 'deposit') {
-                depBtn.classList.add("active");
-                witBtn.classList.remove("active");
-                depSec.classList.add("active");
-                witSec.classList.remove("active");
-            } else {
-                witBtn.classList.add("active");
-                depBtn.classList.remove("active");
-                witSec.classList.add("active");
-                depSec.classList.remove("active");
-            }
+            const matchId = 'match_' + Date.now();
+            const fakeUserId = 'Bot_' + Math.floor(1000 + Math.random() * 9000);
+
+            db.ref(`matches/${matchId}`).set({
+                p1Id: fakeUserId,
+                p1Name: botName,
+                p2Id: "Admin_Bot",
+                p2Name: "Challenger",
+                fee: fee,
+                status: 'confirming',
+                p1Confirmed: true,
+                p2Confirmed: false,
+                votesP1: 0,
+                votesP2: 0,
+                isBotMatch: true,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            });
+            alert("Bot match created and sent to waiting lobby!");
+            document.getElementById('bot-name').value = '';
         }
 
-        function toggleShowMore(type) {
-            if (type === 'deposit') {
-                showAllDeposits = !showAllDeposits;
-                renderDepositsList();
-            } else if (type === 'withdraw') {
-                showAllWithdrawals = !showAllWithdrawals;
-                renderWithdrawalsList();
-            }
-        }
+        // --- 1 Day Report ---
+        function loadOneDayReport() {
+            const reportEl = document.getElementById('one-day-report');
+            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
 
-        // Search user by 8-digit ID with direct Balance Edit option
-        function searchUserById() {
-            let searchId = document.getElementById("searchPlayerId").value.trim();
-            let resultDiv = document.getElementById("userSearchResult");
-
-            if (!searchId || searchId.length !== 8) {
-                alert("Please enter a valid 8-digit Player ID!");
-                return;
-            }
-
-            resultDiv.innerHTML = "Searching user database...";
-
-            db.collection("users").where("player_id", "==", searchId).get().then((snapshot) => {
-                if (snapshot.empty) {
-                    resultDiv.innerHTML = "<p style='color: #ef4444; font-size: 13px;'>No user found with this Player ID.</p>";
-                    return;
-                }
-
-                snapshot.forEach((doc) => {
-                    let u = doc.data();
-                    let uId = doc.id;
-                    let status = u.status || "active";
-
-                    resultDiv.innerHTML = `
-                        <div class="item-box" style="background: #fff; border-color: #6366f1;">
-                            <div><strong>Name:</strong> ${u.name || "N/A"}</div>
-                            <div><strong>Email:</strong> ${u.email || "N/A"}</div>
-                            <div><strong>Player ID:</strong> ${u.player_id}</div>
-                            
-                            <div style="margin-top: 8px;">
-                                <label style="font-size: 12px; font-weight: 600; color: #475569;">Update Balance (Rs.):</label>
-                                <div style="display: flex; gap: 6px; margin-top: 4px;">
-                                    <input type="number" id="edit_balance_${uId}" value="${u.balance || 0}" style="margin-bottom: 0;">
-                                    <button onclick="updateUserBalance('${uId}')" class="btn btn-approve" style="margin: 0; padding: 0 14px;">Save Balance</button>
-                                </div>
-                            </div>
-
-                            <div style="margin-top: 8px;"><strong>Status:</strong> <span class="${status === 'active' ? 'badge-active' : 'badge-suspended'}">${status.toUpperCase()}</span></div>
-                            <div style="margin-top: 8px;">
-                                ${status === 'active' 
-                                    ? `<button onclick="toggleUserStatus('${uId}', 'suspended')" class="btn btn-reject">Suspend Account</button>`
-                                    : `<button onclick="toggleUserStatus('${uId}', 'active')" class="btn btn-approve">Activate Account</button>`
-                                }
-                            </div>
-                        </div>
-                    `;
+            db.ref('matches').once('value', (snapshot) => {
+                let wins50 = 0, wins100 = 0, botWins = 0, botLosses = 0;
+                snapshot.forEach((child) => {
+                    let m = child.val();
+                    if(m.createdAt >= oneDayAgo) {
+                        if(m.fee == 50) wins50++;
+                        if(m.fee == 100) wins100++;
+                        if(m.isBotMatch) {
+                            if((m.votesP1 || 0) >= (m.votesP2 || 0)) botWins++;
+                            else botLosses++;
+                        }
+                    }
                 });
-            }).catch((err) => {
-                resultDiv.innerHTML = "<p style='color: #ef4444; font-size: 13px;'>Error searching user.</p>";
+                reportEl.innerHTML = `
+                    • 50 PKR Matches Played/Won: <b>${wins50}</b><br>
+                    • 100 PKR Matches Played/Won: <b>${wins100}</b><br>
+                    • Bot Wins: <b style="color:#34d399;">${botWins}</b> | Bot Losses: <b style="color:#f43f5e;">${botLosses}</b>
+                `;
             });
         }
 
-        function updateUserBalance(userId) {
-            let newBal = Number(document.getElementById(`edit_balance_${userId}`).value);
-            if (isNaN(newBal)) {
-                alert("Please enter a valid number!");
-                return;
-            }
-
-            db.collection("users").doc.update ? db.collection("users").doc(userId).update({ balance: newBal }) : db.collection("users").doc(userId).update({ balance: newBal });
-            
-            db.collection("users").doc(userId).update({ balance: newBal }).then(() => {
-                alert("User balance updated successfully to Rs. " + newBal);
-                searchUserById();
-            }).catch((err) => {
-                alert("Error updating balance: " + err);
-            });
-        }
-
-        function toggleUserStatus(userId, newStatus) {
-            db.collection("users").doc(userId).update({ status: newStatus }).then(() => {
-                alert("User status changed to " + newStatus.toUpperCase());
-                searchUserById();
-                loadSuspendedUsers();
-            });
-        }
-
-        function loadSuspendedUsers() {
-            db.collection("users").where("status", "==", "suspended").onSnapshot((snapshot) => {
-                let html = "";
-                if (snapshot.empty) {
-                    document.getElementById("suspendedUsersList").innerHTML = '<div class="item-box">No suspended accounts found.</div>';
-                    return;
-                }
-                snapshot.forEach((doc) => {
-                    let u = doc.data();
-                    let uId = doc.id;
+        // --- Deposits (Processing Lock) ---
+        function loadAllDeposits() {
+            db.ref('transactions').on('value', (snapshot) => {
+                const listEl = document.getElementById('deposit-list');
+                listEl.innerHTML = '';
+                let items = [];
+                snapshot.forEach((userSnap) => {
+                    const uId = userSnap.key;
+                    userSnap.forEach((txSnap) => {
+                        let tx = txSnap.val();
+                        if(tx.type === 'Deposit' && (tx.status === 'Pending' || tx.status === 'Processing')) {
+                            items.push({ uId, txKey: txSnap.key, ...tx });
+                        }
+                    });
+                });
+                if(items.length === 0) { listEl.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center;">No pending requests</div>'; return; }
+                let html = '';
+                let limit = showAllDeposits ? items.length : 4;
+                for(let i=0; i<Math.min(items.length, limit); i++) {
+                    let d = items[i];
                     html += `
-                        <div class="item-box" style="background: #fef2f2; border-color: #fca5a5;">
-                            <div><strong>Name:</strong> ${u.name || "N/A"}</div>
-                            <div><strong>Player ID:</strong> ${u.player_id || "N/A"}</div>
-                            <div><strong>Balance:</strong> Rs. ${u.balance || 0}</div>
-                            <div style="margin-top: 8px;">
-                                <button onclick="toggleUserStatus('${uId}', 'active')" class="btn btn-approve">Activate Account</button>
+                        <div class="item-box">
+                            <div><strong>${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>${d.status}</small></div>
+                            <div>
+                                <button class="btn btn-success" onclick="approveTx('${d.uId}', '${d.txKey}', 'Deposit')">Approve</button>
+                                <button class="btn btn-danger" onclick="rejectTx('${d.uId}', '${d.txKey}')">Reject</button>
                             </div>
                         </div>
                     `;
-                });
-                document.getElementById("suspendedUsersList").innerHTML = html;
-            });
-        }
-
-        // Deposits with 4 items limit + Show More
-        function loadDepositRequests() {
-            db.collection("deposit_requests").where("status", "==", "pending").orderBy("timestamp", "desc").onSnapshot(async (snapshot) => {
-                allPendingDeposits = [];
-                for (let docSnap of snapshot.docs) {
-                    let d = docSnap.data();
-                    let userDoc = await db.collection("users").doc(d.userId).get();
-                    let playerId = userDoc.exists ? (userDoc.data().player_id || "N/A") : "N/A";
-                    let userName = userDoc.exists ? (userDoc.data().name || "User") : "User";
-                    allPendingDeposits.push({ id: docSnap.id, userId: d.userId, amount: d.amount, method: d.method, trxId: d.trxId, senderNumber: d.senderNumber, timestamp: d.timestamp, playerId, userName });
                 }
-                renderDepositsList();
+                listEl.innerHTML = html;
+                document.getElementById('dep-show-more').classList.toggle('hidden', items.length <= 4);
             });
         }
 
-        function renderDepositsList() {
-            let container = document.getElementById("depositRequestsList");
-            let showMoreBtn = document.getElementById("depositShowMoreBtn");
-
-            if (allPendingDeposits.length === 0) {
-                container.innerHTML = '<div class="item-box">No pending deposits.</div>';
-                if (showMoreBtn) showMoreBtn.style.display = "none";
-                return;
-            }
-
-            let displayList = showAllDeposits ? allPendingDeposits : allPendingDeposits.slice(0, 4);
-            let html = "";
-            displayList.forEach((d) => {
-                let dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : "Just now";
-                html += `
-                    <div class="item-box" id="dep_box_${d.id}">
-                        <div><strong>User:</strong> ${d.userName} (Player ID: <span style="color:#6366f1; font-weight:bold;">${d.playerId}</span>)</div>
-                        <div><strong>Method:</strong> ${d.method} | <strong>Amount:</strong> Rs. ${d.amount}</div>
-                        <div><strong>TRX ID:</strong> ${d.trxId} | <strong>Sender:</strong> ${d.senderNumber || "N/A"}</div>
-                        <div><strong>Date:</strong> ${dateStr}</div>
-                        <div style="margin-top: 8px;">
-                            <button id="dep_app_${d.id}" onclick="approveDeposit('${d.id}', '${d.userId}', ${d.amount})" class="btn btn-approve">Approve</button>
-                            <button id="dep_rej_${d.id}" onclick="rejectDeposit('${d.id}')" class="btn btn-reject">Reject</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-            if (showMoreBtn) {
-                showMoreBtn.style.display = allPendingDeposits.length > 4 ? "block" : "none";
-                showMoreBtn.innerText = showAllDeposits ? "Show Less" : "Show More";
-            }
-        }
-
-        // Withdrawals with 4 items limit + Show More
-        function loadWithdrawRequests() {
-            db.collection("withdrawal_requests").where("status", "==", "pending").orderBy("timestamp", "desc").onSnapshot(async (snapshot) => {
-                allPendingWithdrawals = [];
-                for (let docSnap of snapshot.docs) {
-                    let w = docSnap.data();
-                    let userDoc = await db.collection("users").doc(w.userId).get();
-                    let playerId = userDoc.exists ? (userDoc.data().player_id || "N/A") : "N/A";
-                    let userName = userDoc.exists ? (userDoc.data().name || "User") : "User";
-                    allPendingWithdrawals.push({ id: docSnap.id, userId: w.userId, amount: w.amount, method: w.method, accountNumber: w.accountNumber, accountTitle: w.accountTitle, timestamp: w.timestamp, playerId, userName });
-                }
-                renderWithdrawalsList();
-            });
-        }
-
-        function renderWithdrawalsList() {
-            let container = document.getElementById("withdrawRequestsList");
-            let showMoreBtn = document.getElementById("withdrawShowMoreBtn");
-
-            if (allPendingWithdrawals.length === 0) {
-                container.innerHTML = '<div class="item-box">No pending withdrawals.</div>';
-                if (showMoreBtn) showMoreBtn.style.display = "none";
-                return;
-            }
-
-            let displayList = showAllWithdrawals ? allPendingWithdrawals : allPendingWithdrawals.slice(0, 4);
-            let html = "";
-            displayList.forEach((w) => {
-                let dateStr = w.timestamp ? new Date(w.timestamp.toDate()).toLocaleString() : "Just now";
-                html += `
-                    <div class="item-box" id="wd_box_${w.id}">
-                        <div><strong>User:</strong> ${w.userName} (Player ID: <span style="color:#6366f1; font-weight:bold;">${w.playerId}</span>)</div>
-                        <div><strong>Method:</strong> ${w.method} | <strong>Amount:</strong> Rs. ${w.amount}</div>
-                        <div><strong>Account:</strong> ${w.accountNumber} (${w.accountTitle || "N/A"})</div>
-                        <div><strong>Date:</strong> ${dateStr}</div>
-                        <div style="margin-top: 8px;">
-                            <button id="wd_app_${w.id}" onclick="approveWithdrawal('${w.id}')" class="btn btn-approve">Approve</button>
-                            <button id="wd_rej_${w.id}" onclick="rejectWithdrawal('${w.id}', '${w.userId}', ${w.amount})" class="btn btn-reject">Reject & Refund</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-            if (showMoreBtn) {
-                showMoreBtn.style.display = allPendingWithdrawals.length > 4 ? "block" : "none";
-                showMoreBtn.innerText = showAllWithdrawals ? "Show Less" : "Show More";
-            }
-        }
-
-        function approveDeposit(reqId, userId, amount) {
-            let userRef = db.collection("users").doc(userId);
-            let reqRef = db.collection("deposit_requests").doc(reqId);
-            db.runTransaction((t) => {
-                return t.get(reqRef).then((r) => {
-                    if (!r.exists || r.data().status !== "pending") throw "Already processed!";
-                    return t.get(userRef).then((u) => {
-                        t.update(userRef, { balance: (u.data().balance || 0) + amount });
-                        t.update(reqRef, { status: "approved" });
+        function loadAllWithdrawals() {
+            db.ref('transactions').on('value', (snapshot) => {
+                const listEl = document.getElementById('withdraw-list');
+                listEl.innerHTML = '';
+                let items = [];
+                snapshot.forEach((userSnap) => {
+                    const uId = userSnap.key;
+                    userSnap.forEach((txSnap) => {
+                        let tx = txSnap.val();
+                        if(tx.type === 'Withdrawal' && (tx.status === 'Pending' || tx.status === 'Processing')) {
+                            items.push({ uId, txKey: txSnap.key, ...tx });
+                        }
                     });
                 });
-            }).then(() => alert("Deposit approved successfully!"));
-        }
-
-        function rejectDeposit(reqId) {
-            db.collection("deposit_requests").doc(reqId).update({ status: "rejected" }).then(() => alert("Deposit rejected."));
-        }
-
-        function approveWithdrawal(reqId) {
-            db.collection("withdrawal_requests").doc(reqId).update({ status: "approved" }).then(() => alert("Withdrawal approved!"));
-        }
-
-        function rejectWithdrawal(reqId, userId, amount) {
-            let userRef = db.collection("users").doc(userId);
-            let reqRef = db.collection("withdrawal_requests").doc(reqId);
-            db.runTransaction((t) => {
-                return t.get(reqRef).then((r) => {
-                    if (!r.exists || r.data().status !== "pending") throw "Already processed!";
-                    return t.get(userRef).then((u) => {
-                        t.update(userRef, { balance: (u.data().balance || 0) + amount });
-                        t.update(reqRef, { status: "rejected" });
-                    });
-                });
-            }).then(() => alert("Withdrawal rejected and refunded!"));
-        }
-
-        // Bot Match logic helpers
-        function listenForWaitingUsers() {
-            db.collection("match_requests").where("status", "==", "waiting").onSnapshot((snapshot) => {
-                allWaitingRequests = [];
-                snapshot.forEach((doc) => { allWaitingRequests.push({ id: doc.id, ...doc.data() }); });
-                filterWaitingUsersForBot();
-            });
-        }
-
-        function filterWaitingUsersForBot() {
-            let selectedFee = Number(document.getElementById("botEntryFee").value);
-            let selectEl = document.getElementById("botUserSelect");
-            let filtered = allWaitingRequests.filter(r => Number(r.entry_fee) === selectedFee);
-
-            if (filtered.length === 0) {
-                selectEl.innerHTML = `<option value="" disabled selected>No user waiting for Rs. ${selectedFee} match</option>`;
-                return;
-            }
-
-            let html = '<option value="" disabled selected>-- Select a user from waiting line --</option>';
-            filtered.forEach((req) => {
-                html += `<option value="${req.id}|${req.creator_id}|${req.creator_name}">${req.creator_name} (Rs. ${req.entry_fee})</option>`;
-            });
-            selectEl.innerHTML = html;
-        }
-
-        function startBotMatchWithUser() {
-            let selectEl = document.getElementById("botUserSelect");
-            let selectedVal = selectEl.value;
-            let botName = document.getElementById("botNameInput").value.trim();
-            let entryFee = Number(document.getElementById("botEntryFee").value);
-
-            if (!botName) { alert("Please enter Bot Name!"); return; }
-            if (!selectedVal) { alert("Please select a waiting user!"); return; }
-
-            let parts = selectedVal.split("|");
-            let reqId = parts[0];
-            let userId = parts[1];
-            let userName = parts[2];
-            let randomBotId = "BOT_" + Math.floor(10000000 + Math.random() * 90000000);
-
-            db.collection("users").doc(userId).get().then((uDoc) => {
-                let userBal = uDoc.data().balance || 0;
-                if (userBal < entryFee) { alert("User has insufficient balance!"); return; }
-
-                db.collection("users").doc(userId).update({ balance: userBal - entryFee });
-
-                db.collection("active_matches").add({
-                    player1_id: userId,
-                    player1_name: userName,
-                    player1_ready: false,
-                    player1_votes: 0,
-                    player2_id: randomBotId,
-                    player2_name: botName,
-                    player2_ready: true,
-                    player2_votes: 0,
-                    entry_fee: entryFee,
-                    status: "pending_join",
-                    is_bot_match: true,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    db.collection("match_requests").doc(reqId).delete();
-                    document.getElementById("botNameInput").value = "";
-                    alert("Bot Match lobby created successfully!");
-                });
-            });
-        }
-
-        function loadAdminBotMatches() {
-            db.collection("active_matches").onSnapshot((snapshot) => {
-                let html = "";
-                let count = 0;
-                snapshot.forEach((doc) => {
-                    let m = doc.data();
-                    if (m.is_bot_match && (m.status === "live" || m.status === "pending_join")) {
-                        count++;
-                        let isLobby = m.status === "pending_join";
-                        let statusBadge = isLobby ? '<span style="color:#d97706; font-weight:bold;">Lobby (Waiting)</span>' : '<span style="color:#059669; font-weight:bold;">Live Battle</span>';
-
-                        html += `
-                            <div class="item-box" style="border-left: 4px solid ${isLobby ? '#d97706' : '#10b981'};">
-                                <div><strong>Match:</strong> ${m.player1_name} vs ${m.player2_name} (Bot) | ${statusBadge}</div>
-                                <div><strong>Entry:</strong> Rs. ${m.entry_fee}</div>
-                                ${isLobby ? `
-                                    <div style="margin-top:6px;"><button onclick="adminConfirmMatch('${doc.id}')" class="btn btn-approve" style="margin:0; padding:6px 12px;">Force Confirm & Start</button></div>
-                                ` : `
-                                    <div style="margin:6px 0;"><strong>Votes:</strong> ${m.player1_name} (${m.player1_votes || 0}) - ${m.player2_name} (${m.player2_votes || 0})</div>
-                                    <div style="display:flex; gap:6px;">
-                                        <button onclick="adminAddVote('${doc.id}', 'p1')" class="btn btn-select">+ Vote ${m.player1_name}</button>
-                                        <button onclick="adminAddVote('${doc.id}', 'p2')" class="btn btn-approve">+ Vote Bot</button>
-                                    </div>
-                                `}
+                if(items.length === 0) { listEl.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center;">No pending requests</div>'; return; }
+                let html = '';
+                let limit = showAllWithdraws ? items.length : 4;
+                for(let i=0; i<Math.min(items.length, limit); i++) {
+                    let w = items[i];
+                    html += `
+                        <div class="item-box">
+                            <div><strong>${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount}</span><br><small>${w.status}</small></div>
+                            <div>
+                                <button class="btn btn-success" onclick="approveTx('${w.uId}', '${w.txKey}', 'Withdrawal')">Approve</button>
+                                <button class="btn btn-danger" onclick="rejectTx('${w.uId}', '${w.txKey}')">Reject</button>
                             </div>
-                        `;
-                    }
-                });
-                document.getElementById("adminBotMatchesList").innerHTML = count > 0 ? html : '<div class="item-box">No active bot matches.</div>';
-            });
-        }
-
-        function adminConfirmMatch(matchId) {
-            db.collection("active_matches").doc(matchId).update({ player1_ready: true, player2_ready: true, status: "live" }).then(() => alert("Match forced live!"));
-        }
-
-        function adminAddVote(matchId, playerKey) {
-            let matchRef = db.collection("active_matches").doc(matchId);
-            db.runTransaction((t) => {
-                return t.get(matchRef).then((doc) => {
-                    let data = doc.data();
-                    if (playerKey === 'p1') {
-                        t.update(matchRef, { player1_votes: (data.player1_votes || 0) + 1 });
-                    } else {
-                        t.update(matchRef, { player2_votes: (data.player2_votes || 0) + 1 });
-                    }
-                });
-            });
-        }
-
-        function loadMatchRequests() {
-            db.collection("match_requests").where("status", "==", "waiting").onSnapshot(async (snapshot) => {
-                let html50 = "", html100 = "", count50 = 0, count100 = 0;
-                for (let reqDoc of snapshot.docs) {
-                    let reqId = reqDoc.id;
-                    let req = reqDoc.data();
-                    let entryFee = Number(req.entry_fee);
-
-                    let item = `<div class="item-box"><div><strong>${req.creator_name}</strong> (Rs. ${entryFee})</div></div>`;
-                    if (entryFee === 50) { html50 += item; count50++; }
-                    else { html100 += item; count100++; }
+                        </div>
+                    `;
                 }
-                document.getElementById("matchRequests50").innerHTML = count50 > 0 ? html50 : '<div class="item-box">No requests.</div>';
-                document.getElementById("matchRequests100").innerHTML = count100 > 0 ? html100 : '<div class="item-box">No requests.</div>';
+                listEl.innerHTML = html;
+                document.getElementById('wd-show-more').classList.toggle('hidden', items.length <= 4);
             });
+        }
+
+        // Set to Processing first to prevent double clicks
+        function approveTx(uId, txKey, type) {
+            db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' });
+            alert(`${type} approved successfully!`);
+        }
+        function rejectTx(uId, txKey) {
+            db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Rejected' });
+            alert("Request rejected.");
+        }
+
+        // --- Matches ---
+        function loadMatches() {
+            db.ref('matches').on('value', (snapshot) => {
+                const list50 = document.getElementById('matches-50-list');
+                const list100 = document.getElementById('matches-100-list');
+                list50.innerHTML = ''; list100.innerHTML = '';
+                let html50 = '', html100 = '';
+
+                snapshot.forEach((child) => {
+                    let m = child.val();
+                    let box = `
+                        <div class="item-box">
+                            <div><strong>#${child.key.substring(6)}</strong><br><small>${m.p1Name} vs ${m.p2Name || 'Waiting'}</small><br><small style="color:#38bdf8;">Votes: ${m.votesP1||0} - ${m.votesP2||0}</small></div>
+                            <button class="btn btn-danger" onclick="deleteMatch('${child.key}')">Cancel</button>
+                        </div>
+                    `;
+                    if(m.fee == 100) html100 += box;
+                    else html50 += box;
+                });
+                list50.innerHTML = html50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No matches</div>';
+                list100.innerHTML = html100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No matches</div>';
+            });
+        }
+        function deleteMatch(k) { db.ref(`matches/${k}`).remove(); alert("Match cancelled"); }
+
+        // --- User Search & Votes Stats ---
+        function searchUser() {
+            const uId = document.getElementById('search-user-id').value.trim();
+            if(!uId) { alert("Enter ID"); return; }
+            searchedUserId = uId;
+
+            db.ref(`users/${uId}`).once('value', (snapshot) => {
+                document.getElementById('user-info-box').classList.remove('hidden');
+                document.getElementById('u-id').innerText = uId;
+                let data = snapshot.val() || {};
+                let bal = data.balance || 1000;
+                document.getElementById('u-bal').innerText = bal;
+                document.getElementById('new-user-bal').value = bal;
+
+                // Calculate total votes cast by user across matches
+                db.ref('matches').once('value', (matchSnap) => {
+                    let totalVotes = 0;
+                    matchSnap.forEach((mChild) => {
+                        let m = mChild.val();
+                        if(m.p1Id === uId) totalVotes += (m.votesP1 || 0);
+                        if(m.p2Id === uId) totalVotes += (m.votesP2 || 0);
+                    });
+                    document.getElementById('u-high-votes').innerText = totalVotes;
+                });
+            });
+        }
+
+        function updateUserBalance() {
+            if(!searchedUserId) return;
+            let nb = parseFloat(document.getElementById('new-user-bal').value);
+            db.ref(`users/${searchedUserId}`).update({ balance: nb });
+            document.getElementById('u-bal').innerText = nb;
+            alert("Balance updated!");
+        }
+
+        function toggleAccountSuspension() {
+            if(!searchedUserId) return;
+            db.ref(`users/${searchedUserId}`).once('value', (snapshot) => {
+                let st = snapshot.val()?.suspended || false;
+                db.ref(`users/${searchedUserId}`).update({ suspended: !st });
+                alert(!st ? "Suspended" : "Unsuspended");
+            });
+        }
+
+        function openSuspendedModal() {
+            document.getElementById('suspended-modal').classList.remove('hidden');
+            const cont = document.getElementById('suspended-list-container');
+            cont.innerHTML = 'Loading...';
+            db.ref('users').once('value', (snapshot) => {
+                cont.innerHTML = '';
+                let h = '';
+                snapshot.forEach((child) => {
+                    if(child.val().suspended) {
+                        h += `<div class="item-box"><span>${child.key}</span><button class="btn btn-success" onclick="unsuspend('${child.key}')">Unsuspend</button></div>`;
+                    }
+                });
+                cont.innerHTML = h || '<div style="color:#64748b; text-align:center;">No suspended accounts</div>';
+            });
+        }
+        function closeSuspendedModal() { document.getElementById('suspended-modal').classList.add('hidden'); }
+        function unsuspend(uId) { db.ref(`users/${uId}`).update({ suspended: false }); openSuspendedModal(); }
+
+        // --- Support Chats ---
+        function loadSupportChatsList() {
+            db.ref('support_chats').on('value', (snapshot) => {
+                const listEl = document.getElementById('support-users-list');
+                listEl.innerHTML = '';
+                let chats = [];
+                snapshot.forEach((child) => { chats.push({ uId: child.key }); });
+                if(chats.length === 0) { listEl.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center;">No chats</div>'; return; }
+                let html = '';
+                let limit = showAllChats ? chats.length : 4;
+                for(let i=0; i<Math.min(chats.length, limit); i++) {
+                    let c = chats[i];
+                    html += `<div class="item-box"><span>User: <strong>${c.uId}</strong></span><button class="btn" onclick="openChatModal('${c.uId}')">Chat</button></div>`;
+                }
+                listEl.innerHTML = html;
+                document.getElementById('chat-show-more').classList.toggle('hidden', chats.length <= 4);
+            });
+        }
+
+        function openChatModal(uId) {
+            activeChatUserId = uId;
+            document.getElementById('chat-modal').classList.remove('hidden');
+            document.getElementById('chat-modal-title').innerText = `Chat: ${uId}`;
+            const cb = document.getElementById('admin-chat-box');
+            db.ref(`support_chats/${uId}`).on('value', (snapshot) => {
+                cb.innerHTML = '';
+                snapshot.forEach((child) => {
+                    let msg = child.val();
+                    let isU = msg.sender === 'user';
+                    cb.innerHTML += `<div style="display:flex; flex-direction:column; align-items:${isU?'flex-start':'flex-end'}"><div class="chat-msg ${isU?'chat-user':'chat-admin'}">${msg.text}</div></div>`;
+                });
+                cb.scrollTop = cb.scrollHeight;
+            });
+        }
+        function closeChatModal() { document.getElementById('chat-modal').classList.add('hidden'); activeChatUserId = null; }
+        function sendAdminReply() {
+            let txt = document.getElementById('admin-reply-input').value.trim();
+            if(!txt || !activeChatUserId) return;
+            db.ref(`support_chats/${activeChatUserId}`).push({ sender: 'admin', text: txt, userRead: false, timestamp: Date.now() });
+            document.getElementById('admin-reply-input').value = '';
+        }
+
+        function toggleShowMore(t) {
+            if(t==='deposit') { showAllDeposits=!showAllDeposits; loadAllDeposits(); }
+            if(t==='withdraw') { showAllWithdraws=!showAllWithdraws; loadAllWithdrawals(); }
+            if(t==='chat') { showAllChats=!showAllChats; loadSupportChatsList(); }
         }
     </script>
 </body>
