@@ -72,8 +72,6 @@
         .badge-confirmed { background: rgba(5, 150, 105, 0.15); color: #34d399; border: 1px solid rgba(5, 150, 105, 0.3); }
         .players-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
         .player-box { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; text-align: center; }
-        .cancel-link { color: #f43f5e; background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 12px; margin-top: 8px; display: inline-block; }
-        .lobby-box { background: #020617; border: 1px solid #334151; border-radius: 12px; padding: 16px; margin-top: 16px; text-align: center; }
     </style>
 </head>
 <body>
@@ -105,18 +103,19 @@
 
             <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Start Match ➔</button>
 
-            <div id="match-lobby-box" class="lobby-box hidden">
-                <div class="spinner"></div>
-                <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 4px; color:#38bdf8;">In Queue...</h3>
-                <p style="font-size: 11px; margin-bottom: 8px;">Waiting to be paired for match (Fee: Rs. <span id="wait-fee">50</span>).</p>
-                <button onclick="cancelQueue()" class="cancel-link">Cancel Queue</button>
-            </div>
-
             <div style="margin-top: 20px; text-align: left; border-top: 1px solid #1e293b; padding-top: 16px;">
                 <div style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Join via Match Link/ID</div>
                 <div class="search-box">
                     <input type="text" id="search-match-id" placeholder="Enter Match ID..." style="margin-bottom:0;">
                     <button class="go-btn" onclick="searchMatch()">Go</button>
+                </div>
+            </div>
+
+            <!-- Started Matches List (Directly Below Search Link) -->
+            <div style="margin-top: 20px; text-align: left; border-top: 1px solid #1e293b; padding-top: 16px;">
+                <div style="font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px;">Your Started / Active Matches (Max 2)</div>
+                <div id="user-started-matches-list" style="max-height: 180px; overflow-y: auto;">
+                    <div style="color: #64748b; font-size: 11px; text-align: center;">No active matches found</div>
                 </div>
             </div>
         </div>
@@ -139,13 +138,17 @@
             </div>
 
             <button id="btn-confirm-join" onclick="confirmMatchJoin()" class="secondary-btn">Confirm Join Match</button>
+            <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px;">Back to Home</button>
         </div>
 
         <!-- Battle Screen -->
         <div id="screen-battle" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
                 <span id="battle-match-id" style="color: #38bdf8; font-family: monospace;">ID: #---</span>
-                <button onclick="shareMatchLink()" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">Share</button>
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="shareMatchLink()" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">Share Link</button>
+                    <button onclick="switchScreen('screen-home')" style="background: #1e293b; border: 1px solid #334155; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">Home</button>
+                </div>
             </div>
 
             <h1>Voting Battle Live!</h1>
@@ -295,7 +298,7 @@
                 <h3 style="font-size: 16px; font-weight: bold;">Support Chat</h3>
                 <button class="close-modal" onclick="closeSupportModal()">✕</button>
             </div>
-            <div id="support-chat-box" class="chat-box"></div>
+            <div id="support-chat-box" class="chat-box" style="background: #020617; border: 1px solid #1e293b; border-radius: 10px; height: 200px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;"></div>
             <div style="display: flex; gap: 8px;">
                 <input type="text" id="support-input" placeholder="Type your message..." style="margin-bottom:0;">
                 <button onclick="sendSupportMessage()" class="go-btn" style="padding: 0 12px;">Send</button>
@@ -387,18 +390,83 @@
                     }
                 });
 
-                db.ref(`user_active_match/${userId}`).on('value', (snapshot) => {
-                    if(snapshot.exists()) {
-                        const mId = snapshot.val().matchId;
-                        enterConfirmationScreen(mId);
-                    }
-                });
+                loadUserStartedMatches();
 
             } else {
                 document.getElementById('auth-modal').classList.remove('hidden');
                 switchAuthView('login');
             }
         });
+
+        function loadUserStartedMatches() {
+            db.ref('matches').on('value', (matchSnap) => {
+                db.ref('queues').on('value', (queueSnap) => {
+                    const listEl = document.getElementById('user-started-matches-list');
+                    listEl.innerHTML = '';
+                    let html = '';
+                    let activeCount = 0;
+
+                    // Check active/confirmed matches
+                    matchSnap.forEach((child) => {
+                        let m = child.val();
+                        let mId = child.key;
+                        if(m.p1Id === userId || m.p2Id === userId) {
+                            activeCount++;
+                            let shareUrl = window.location.origin + window.location.pathname + "?match=" + mId;
+                            html += `
+                                <div style="background:#020617; border:1px solid #1e293b; padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                    <div>
+                                        <strong style="color:#38bdf8; font-size:11px;">#${mId.substring(6)} (${m.fee} PKR)</strong><br>
+                                        <small style="color:#94a3b8; font-size:10px;">${m.p1Name} vs ${m.p2Name}</small>
+                                    </div>
+                                    <div style="display:flex; gap:4px;">
+                                        <button onclick="navigator.clipboard.writeText('${shareUrl}'); alert('Match link copied!');" style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:4px 6px; border-radius:6px; font-size:10px; cursor:pointer;">Copy Link</button>
+                                        <button onclick="openMatchById('${mId}')" style="background:#059669; border:none; color:#fff; padding:4px 6px; border-radius:6px; font-size:10px; cursor:pointer;">Open</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    // Check queue entries for this user
+                    queueSnap.forEach((feeSnap) => {
+                        feeSnap.forEach((qChild) => {
+                            let q = qChild.val();
+                            if(q.userId === userId) {
+                                activeCount++;
+                                html += `
+                                    <div style="background:#020617; border:1px solid #334155; padding:8px 10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                        <div>
+                                            <strong style="color:#fb7185; font-size:11px;">In Queue (${q.fee} PKR)</strong><br>
+                                            <small style="color:#94a3b8; font-size:10px;">Waiting for opponent...</small>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        });
+                    });
+
+                    window.currentUserActiveMatchesCount = activeCount;
+                    listEl.innerHTML = html || '<div style="color:#64748b; font-size:11px; text-align:center;">No active matches found</div>';
+                });
+            });
+        }
+
+        function openMatchById(mId) {
+            currentMatchId = mId;
+            db.ref(`matches/${mId}`).once('value', (snapshot) => {
+                let m = snapshot.val();
+                if(m) {
+                    if(m.p1Confirmed && m.p2Confirmed) {
+                        enterBattleScreen(m);
+                    } else {
+                        enterConfirmationScreen(mId);
+                    }
+                } else {
+                    alert("Match not found!");
+                }
+            });
+        }
 
         function switchAuthView(view) {
             document.getElementById('form-login').classList.add('hidden');
@@ -719,28 +787,22 @@
         }
 
         function startMatchFlow() {
+            let activeCount = window.currentUserActiveMatchesCount || 0;
+            if(activeCount >= 2) {
+                alert("You can only have a maximum of 2 active or queued matches at a time!");
+                return;
+            }
+
             if (balance < selectedFee) { alert("Insufficient balance! Please deposit funds."); return; }
             balance -= selectedFee;
             db.ref(`users/${userId}`).update({ balance: balance });
             document.getElementById('user-balance').innerText = balance;
-            document.getElementById('wait-fee').innerText = selectedFee;
-            document.getElementById('start-match-btn').classList.add('hidden');
-            document.getElementById('match-lobby-box').classList.remove('hidden');
 
-            const queueKey = userId;
+            const queueKey = userId + "_" + Date.now();
             db.ref(`queues/${selectedFee}/${queueKey}`).set({
                 userId: userId, userName: userName, fee: selectedFee, timestamp: Date.now()
             });
-        }
-
-        function cancelQueue() {
-            balance += selectedFee;
-            db.ref(`users/${userId}`).update({ balance: balance });
-            document.getElementById('user-balance').innerText = balance;
-            db.ref(`queues/${selectedFee}/${userId}`).remove();
-            db.ref(`user_active_match/${userId}`).remove();
-            document.getElementById('match-lobby-box').classList.add('hidden');
-            document.getElementById('start-match-btn').classList.remove('hidden');
+            alert("Match request added to queue successfully!");
         }
 
         function enterConfirmationScreen(matchId) {
@@ -778,8 +840,6 @@
                     clearInterval(timerInterval);
                     alert("Match cancelled due to timeout!");
                     switchScreen('screen-home');
-                    document.getElementById('match-lobby-box').classList.add('hidden');
-                    document.getElementById('start-match-btn').classList.remove('hidden');
                 }
             }, 1000);
         }
@@ -800,6 +860,7 @@
         function enterBattleScreen(match) {
             if(timerInterval) clearInterval(timerInterval);
             switchScreen('screen-battle');
+            document.getElementById('battle-match-id').innerText = `ID: #${currentMatchId}`;
             document.getElementById('battle-p1-name').innerText = match.p1Name;
             document.getElementById('battle-p2-name').innerText = match.p2Name;
 
@@ -831,8 +892,14 @@
             const matchId = document.getElementById('search-match-id').value.trim();
             if(!matchId) { alert("Please enter Match ID"); return; }
             db.ref(`matches/${matchId}`).once('value', (snapshot) => {
-                if(snapshot.exists()) { currentMatchId = matchId; enterBattleScreen(snapshot.val()); }
-                else alert("Match not found!");
+                if(snapshot.exists()) {
+                    currentMatchId = matchId;
+                    let m = snapshot.val();
+                    if(m.p1Confirmed && m.p2Confirmed) enterBattleScreen(m);
+                    else enterConfirmationScreen(matchId);
+                } else {
+                    alert("Match not found!");
+                }
             });
         }
 
@@ -841,10 +908,15 @@
             const matchParam = urlParams.get('match');
             if(matchParam) {
                 db.ref(`matches/${matchParam}`).once('value', (snapshot) => {
-                    if(snapshot.exists()) { currentMatchId = matchParam; enterBattleScreen(snapshot.val()); }
+                    if(snapshot.exists()) {
+                        currentMatchId = matchParam;
+                        let m = snapshot.val();
+                        if(m.p1Confirmed && m.p2Confirmed) enterBattleScreen(m);
+                        else enterConfirmationScreen(matchParam);
+                    }
                 });
             }
         };
     </script>
 </body>
-</html>  
+</html>
