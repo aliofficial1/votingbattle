@@ -113,9 +113,9 @@
 
             <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Find Opponent / Start Match ➔</button>
 
-            <!-- Active / Started Matches -->
+            <!-- Active / Started / Finding Matches -->
             <div style="margin-top: 18px; text-align: left; border-top: 1px solid #1e293b; padding-top: 14px;">
-                <div style="font-size: 10px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Your Started / Active Matches (Max 2)</div>
+                <div style="font-size: 10px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Your Started / Active Matches</div>
                 <div id="user-started-matches-list" style="max-height: 170px; overflow-y: auto;">
                     <div style="color: #64748b; font-size: 11px; text-align: center; padding: 8px;">No active matches found</div>
                 </div>
@@ -131,7 +131,7 @@
             </div>
         </div>
 
-        <!-- Confirmation Lobby Screen -->
+        <!-- Confirmation Lobby Screen (20 minutes timer) -->
         <div id="screen-confirm" class="card hidden">
             <div class="status-badge badge-waiting">Professional Battle Lobby</div>
             <h1>Match Ready!</h1>
@@ -152,7 +152,7 @@
             <button onclick="switchScreen('screen-home')" class="primary-btn" style="background:#1e293b; border:1px solid #334155; margin-top: 10px; box-shadow:none;">Back to Home</button>
         </div>
 
-        <!-- Live Battle Screen -->
+        <!-- Live Battle Screen (Voting + Stopwatch) -->
         <div id="screen-battle" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px;">
                 <span id="battle-match-id" style="color: #38bdf8; font-family: monospace; font-weight: bold;">ID: #---</span>
@@ -163,7 +163,6 @@
             </div>
 
             <h1>Voting Battle Live!</h1>
-            <!-- Live Stopwatch Timer Counter -->
             <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); padding: 6px; border-radius: 8px; font-size: 11px; color: #38bdf8; font-weight: bold; margin-bottom: 12px;">
                 ⏱️ Active Duration: <span id="live-stopwatch">00:00:00</span>
             </div>
@@ -195,7 +194,7 @@
         </div>
     </main>
 
-    <!-- LOADING SPLASH -->
+    <!-- LOADING & AUTH MODALS -->
     <div id="loading-modal" class="modal-overlay">
         <div style="text-align: center;">
             <div class="spinner"></div>
@@ -203,7 +202,6 @@
         </div>
     </div>
 
-    <!-- AUTH MODAL -->
     <div id="auth-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -243,7 +241,7 @@
         </div>
     </div>
 
-   <!-- SUSPENDED MODAL -->
+    <!-- SUSPENDED MODAL -->
     <div id="suspended-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align: center;">
             <h2 style="color: #ef4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">Account Suspended</h2>
@@ -409,7 +407,7 @@
                 loadUserStartedMatches();
 
             } else {
-                document.getElementById('auth-modal').classList.add('hidden');
+                document.getElementById('auth-modal').classList.remove('hidden');
                 switchAuthView('login');
             }
         });
@@ -455,8 +453,8 @@
                                 html += `
                                     <div class="pro-match-card" style="border-color:#334155; cursor:default;">
                                         <div>
-                                            <strong style="color:#fb7185; font-size:11px;">In Queue (${q.fee} PKR)</strong><br>
-                                            <small style="color:#94a3b8; font-size:10px;">Searching for opponent...</small>
+                                            <strong style="color:#38bdf8; font-size:11px;">${q.userName} vs Finding Opponent... (${q.fee} PKR)</strong><br>
+                                            <small style="color:#94a3b8; font-size:10px;">Searching in queue...</small>
                                         </div>
                                         <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 8px; border-radius:4px; font-size:10px; font-weight:bold;">SEARCHING</span>
                                     </div>
@@ -470,7 +468,8 @@
                 });
             });
         }
-function openMatchDirectly(mId) {
+
+        function openMatchDirectly(mId) {
             currentMatchId = mId;
             db.ref(`matches/${mId}`).once('value', (snapshot) => {
                 let m = snapshot.val();
@@ -502,8 +501,7 @@ function openMatchDirectly(mId) {
                 document.getElementById('form-forgot').classList.remove('hidden');
             }
         }
-
-        function handleSignup() {
+function handleSignup() {
             const username = document.getElementById('signup-username').value.trim();
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value.trim();
@@ -764,7 +762,8 @@ function openMatchDirectly(mId) {
             });
         }
 
-function openProfileModal() { document.getElementById('profile-modal').classList.remove('hidden'); document.getElementById('match-history-container').classList.add('hidden'); }
+
+        function openProfileModal() { document.getElementById('profile-modal').classList.remove('hidden'); document.getElementById('match-history-container').classList.add('hidden'); }
         function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
         function toggleMatchHistory() {
             const container = document.getElementById('match-history-container');
@@ -897,7 +896,6 @@ function openProfileModal() { document.getElementById('profile-modal').classList
             document.getElementById('battle-p1-name').innerText = match.p1Name;
             document.getElementById('battle-p2-name').innerText = match.p2Name;
 
-            // Start Live Stopwatch Timer from match creation time
             const createdAt = match.createdAt || Date.now();
             startLiveStopwatch(createdAt);
 
