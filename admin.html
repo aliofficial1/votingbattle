@@ -43,11 +43,11 @@
         <div class="logo">VoteBattle Admin Panel</div>
         <div style="display:flex; gap:8px;">
             <button class="btn btn-secondary" onclick="window.location.href='index.html'">Back to Home</button>
-            <button class="btn btn-danger" onclick="openSuspendedModal()">Suspended Accounts</button>
+            <button class="btn btn-danger" onclick="openSuspendedModal()">Suspended</button>
         </div>
     </div>
 
-    <!-- Bot Match Creator Card -->
+    <!-- Create Bot Match Card -->
     <div class="card" style="border: 1px solid #38bdf8;">
         <h2>Create Bot / Fake Match</h2>
         <div class="grid-2" style="margin-bottom:0;">
@@ -63,10 +63,10 @@
                 <input type="text" id="bot-name" placeholder="Enter bot name...">
             </div>
         </div>
-        <button class="btn btn-success" onclick="createBotMatch()" style="width:100%; margin-top:8px;">Create & Send to Waiting</button>
+        <button class="btn btn-success" onclick="createBotMatch()" style="width:100%; margin-top:8px;">Create Bot Match</button>
     </div>
 
-    <!-- 1 Day Report Card -->
+    <!-- Last 1 Day Report -->
     <div class="card">
         <h2>Last 1 Day Report (Stats)</h2>
         <div id="one-day-report" style="font-size:12px; color:#94a3b8; line-height:1.6;">Loading report...</div>
@@ -102,15 +102,16 @@
     </div>
 
     <div class="grid-2">
-        <!-- User Management -->
+        <!-- User Management & Match Request Control -->
         <div class="card">
-            <h2>User Management, Votes & Match History</h2>
+            <h2>User Management & Match Requests</h2>
             <input type="text" id="search-user-id" placeholder="Enter 8-Digit User ID...">
-            <button class="btn" onclick="searchUser()" style="width:100%; margin-bottom:10px;">Search User</button>
+            <button class="btn" onclick="searchUser()" style="width:100%; margin-bottom:10px;">Search User Stats</button>
             
             <div id="user-info-box" class="hidden" style="background:#020617; padding:10px; border-radius:8px; border:1px solid #1e293b; font-size:12px;">
                 <p style="margin-bottom:4px;">ID: <span id="u-id" style="color:#38bdf8;">---</span></p>
                 <p style="margin-bottom:4px;">Balance: Rs. <span id="u-bal">0</span></p>
+                <p style="margin-bottom:4px; color:#34d399;">Wins: <span id="u-wins">0</span> | Losses: <span id="u-losses" style="color:#ef4444;">0</span></p>
                 <p style="margin-bottom:6px; color:#c084fc;">Total Votes Cast: <span id="u-high-votes">0</span></p>
                 <input type="number" id="new-user-bal" placeholder="New Balance...">
                 <button class="btn btn-success" onclick="updateUserBalance()" style="width:100%; margin-bottom:6px;">Change Balance</button>
@@ -178,7 +179,6 @@
             loadOneDayReport();
         };
 
-        // --- Create Bot Match ---
         function createBotMatch() {
             const fee = parseInt(document.getElementById('bot-fee').value);
             const botName = document.getElementById('bot-name').value.trim();
@@ -201,11 +201,10 @@
                 isBotMatch: true,
                 createdAt: firebase.database.ServerValue.TIMESTAMP
             });
-            alert("Bot match created and sent to waiting lobby!");
+            alert("Bot match created!");
             document.getElementById('bot-name').value = '';
         }
 
-        // --- 1 Day Report ---
         function loadOneDayReport() {
             const reportEl = document.getElementById('one-day-report');
             const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
@@ -224,14 +223,13 @@
                     }
                 });
                 reportEl.innerHTML = `
-                    • 50 PKR Matches Played/Won: <b>${wins50}</b><br>
-                    • 100 PKR Matches Played/Won: <b>${wins100}</b><br>
+                    • 50 PKR Matches: <b>${wins50}</b><br>
+                    • 100 PKR Matches: <b>${wins100}</b><br>
                     • Bot Wins: <b style="color:#34d399;">${botWins}</b> | Bot Losses: <b style="color:#f43f5e;">${botLosses}</b>
                 `;
             });
         }
 
-        // --- Deposits (Processing Lock) ---
         function loadAllDeposits() {
             db.ref('transactions').on('value', (snapshot) => {
                 const listEl = document.getElementById('deposit-list');
@@ -253,7 +251,7 @@
                     let d = items[i];
                     html += `
                         <div class="item-box">
-                            <div><strong>${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>${d.status}</small></div>
+                            <div><strong>${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>TID: ${d.tid || 'N/A'}</small></div>
                             <div>
                                 <button class="btn btn-success" onclick="approveTx('${d.uId}', '${d.txKey}', 'Deposit')">Approve</button>
                                 <button class="btn btn-danger" onclick="rejectTx('${d.uId}', '${d.txKey}')">Reject</button>
@@ -287,7 +285,7 @@
                     let w = items[i];
                     html += `
                         <div class="item-box">
-                            <div><strong>${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount}</span><br><small>${w.status}</small></div>
+                            <div><strong>${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount} (${w.method})</span><br><small>Name: ${w.accName} | Acc: ${w.account}</small></div>
                             <div>
                                 <button class="btn btn-success" onclick="approveTx('${w.uId}', '${w.txKey}', 'Withdrawal')">Approve</button>
                                 <button class="btn btn-danger" onclick="rejectTx('${w.uId}', '${w.txKey}')">Reject</button>
@@ -300,17 +298,15 @@
             });
         }
 
-        // Set to Processing first to prevent double clicks
         function approveTx(uId, txKey, type) {
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' });
-            alert(`${type} approved successfully!`);
+            alert(`${type} approved!`);
         }
         function rejectTx(uId, txKey) {
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Rejected' });
             alert("Request rejected.");
         }
 
-        // --- Matches ---
         function loadMatches() {
             db.ref('matches').on('value', (snapshot) => {
                 const list50 = document.getElementById('matches-50-list');
@@ -335,7 +331,6 @@
         }
         function deleteMatch(k) { db.ref(`matches/${k}`).remove(); alert("Match cancelled"); }
 
-        // --- User Search & Votes Stats ---
         function searchUser() {
             const uId = document.getElementById('search-user-id').value.trim();
             if(!uId) { alert("Enter ID"); return; }
@@ -349,14 +344,20 @@
                 document.getElementById('u-bal').innerText = bal;
                 document.getElementById('new-user-bal').value = bal;
 
-                // Calculate total votes cast by user across matches
                 db.ref('matches').once('value', (matchSnap) => {
-                    let totalVotes = 0;
+                    let totalVotes = 0, wins = 0, losses = 0;
                     matchSnap.forEach((mChild) => {
                         let m = mChild.val();
-                        if(m.p1Id === uId) totalVotes += (m.votesP1 || 0);
-                        if(m.p2Id === uId) totalVotes += (m.votesP2 || 0);
+                        if(m.p1Id === uId || m.p2Id === uId) {
+                            let isP1 = m.p1Id === uId;
+                            let myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
+                            let oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
+                            totalVotes += myVotes;
+                            if(myVotes >= oppVotes) wins++; else losses++;
+                        }
                     });
+                    document.getElementById('u-wins').innerText = wins;
+                    document.getElementById('u-losses').innerText = losses;
                     document.getElementById('u-high-votes').innerText = totalVotes;
                 });
             });
@@ -375,13 +376,13 @@
             db.ref(`users/${searchedUserId}`).once('value', (snapshot) => {
                 let st = snapshot.val()?.suspended || false;
                 db.ref(`users/${searchedUserId}`).update({ suspended: !st });
-                alert(!st ? "Suspended" : "Unsuspended");
+                alert(!st ? "Account Suspended" : "Account Unsuspended");
             });
         }
 
         function openSuspendedModal() {
             document.getElementById('suspended-modal').classList.remove('hidden');
-            const cont = document.getElementById('suspended-list-container');
+             const cont = document.getElementById('suspended-list-container');
             cont.innerHTML = 'Loading...';
             db.ref('users').once('value', (snapshot) => {
                 cont.innerHTML = '';
@@ -397,7 +398,6 @@
         function closeSuspendedModal() { document.getElementById('suspended-modal').classList.add('hidden'); }
         function unsuspend(uId) { db.ref(`users/${uId}`).update({ suspended: false }); openSuspendedModal(); }
 
-        // --- Support Chats ---
         function loadSupportChatsList() {
             db.ref('support_chats').on('value', (snapshot) => {
                 const listEl = document.getElementById('support-users-list');

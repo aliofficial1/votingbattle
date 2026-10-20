@@ -25,10 +25,12 @@
         h1 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: #fff; }
         p { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 16px; }
         
-        .fee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .fee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .fee-btn { padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; border: 1px solid #1e293b; background: #020617; color: #94a3b8; text-align: center; transition: 0.2s; }
         .fee-btn.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
         
+        .prize-info { background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-bottom: 16px; }
+
         .primary-btn { width: 100%; background: linear-gradient(to right, #0284c7, #7c3aed); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
         .secondary-btn { width: 100%; background: #059669; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
         
@@ -90,13 +92,15 @@
         <!-- Home Card -->
         <div id="screen-home" class="card">
             <h1>Head-to-Head Voting Battle</h1>
-            <p>Choose your entry fee, find an opponent, get confirmed within 20 minutes, and win votes to claim the prize pool!</p>
+            <p>Choose your entry fee, find an opponent, get confirmed, and win votes to claim the prize pool!</p>
             
-            <div style="text-align: left; margin-bottom: 12px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Select Entry Fee (PKR)</div>
+            <div style="text-align: left; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Select Entry Fee (PKR)</div>
             <div class="fee-grid">
                 <button onclick="setEntryFee(50)" id="fee-btn-50" class="fee-btn active">Rs. 50</button>
                 <button onclick="setEntryFee(100)" id="fee-btn-100" class="fee-btn">Rs. 100</button>
             </div>
+            
+            <div class="prize-info" id="prize-display">Winning Prize: Rs. 95</div>
 
             <button id="start-match-btn" onclick="startMatchFlow()" class="primary-btn">Start Match ➔</button>
 
@@ -197,11 +201,15 @@
                 </select>
 
                 <div id="dep-instructions" class="info-box">
-                    Send amount to EasyPaisa Number: <b>03001234567</b> (Name: VoteBattle Admin)
+                    Send amount to EasyPaisa Name: <b>Ali Khan</b> | Number: <b>03001234567</b>
                 </div>
 
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="dep-amount" placeholder="Enter amount...">
+
+                <label style="font-size: 11px; color:#94a3b8;">Transaction ID / TID</label>
+                <input type="text" id="dep-tid" placeholder="Enter 11-digit Transaction ID...">
+
                 <button onclick="submitDeposit()" class="primary-btn" style="padding: 10px;">Submit Deposit Request</button>
             </div>
 
@@ -213,10 +221,16 @@
                     <option value="Binance ID">Binance ID</option>
                     <option value="USDT Wallet">USDT Wallet</option>
                 </select>
-                <label style="font-size: 11px; color:#94a3b8;">Account / Wallet Details</label>
+
+                <label style="font-size: 11px; color:#94a3b8;">Account Holder Name</label>
+                <input type="text" id="wd-name" placeholder="Enter account holder name...">
+
+                <label style="font-size: 11px; color:#94a3b8;">Account Number / Wallet Details</label>
                 <input type="text" id="wd-account" placeholder="Account Number or ID...">
+
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="wd-amount" placeholder="Enter amount...">
+
                 <button onclick="submitWithdraw()" class="primary-btn" style="padding: 10px;">Submit Withdrawal Request</button>
             </div>
 
@@ -283,10 +297,7 @@
             messagingSenderId: "572901936550",
             appId: "1:572901936550:web:a3918de85c585d51975367"
         };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let userId = localStorage.getItem('vb_user_id');
@@ -294,7 +305,6 @@
             userId = Math.floor(10000000 + Math.random() * 90000000).toString();
             localStorage.setItem('vb_user_id', userId);
         }
-        
         let userName = localStorage.getItem('vb_user_name') || ('User_' + userId.substring(4));
         let balance = 1000;
         let selectedFee = 50;
@@ -303,7 +313,7 @@
         let timerInterval = null;
         let dbRef = null;
 
-        // Logo tap for Admin modal
+        // Admin Logo 6-Tap
         let logoTapCount = 0;
         let logoTapTimer = null;
         function handleLogoClick() {
@@ -342,7 +352,6 @@
                 closeAdminLoginModal();
             }
         }
-
         function closeAdminLoginModal() {
             const overlay = document.getElementById('admin-login-overlay');
             if(overlay) overlay.remove();
@@ -352,6 +361,7 @@
         document.getElementById('user-balance').innerText = balance;
         document.getElementById('new-name-input').value = userName;
 
+        // Support Badge (Unread Red Count)
         db.ref(`support_chats/${userId}`).on('value', (snapshot) => {
             let unreadCount = 0;
             snapshot.forEach((child) => {
@@ -441,6 +451,10 @@
             selectedFee = fee;
             document.getElementById('fee-btn-50').className = "fee-btn" + (fee === 50 ? " active" : "");
             document.getElementById('fee-btn-100').className = "fee-btn" + (fee === 100 ? " active" : "");
+            
+            // Winning Prize Calculation Display
+            const prizeText = fee === 50 ? "Winning Prize: Rs. 95" : "Winning Prize: Rs. 190";
+            document.getElementById('prize-display').innerText = prizeText;
         }
 
         function openWalletModal() {
@@ -453,10 +467,10 @@
         function updateDepositInstructions() {
             const method = document.getElementById('dep-method').value;
             const box = document.getElementById('dep-instructions');
-            if(method === 'EasyPaisa') box.innerHTML = "Send amount to EasyPaisa: <b>03001234567</b>";
-            else if(method === 'JazzCash') box.innerHTML = "Send amount to JazzCash: <b>03007654321</b>";
-            else if(method === 'Binance ID') box.innerHTML = "Send amount to Binance Pay ID: <b>98765432</b>";
-            else box.innerHTML = "Send USDT to TRC20: <b>TXYZ123456789ABCDEFAWESOMESWAP</b>";
+            if(method === 'EasyPaisa') box.innerHTML = "Send amount to EasyPaisa Name: <b>Ali Khan</b> | Number: <b>03001234567</b>";
+            else if(method === 'JazzCash') box.innerHTML = "Send amount to JazzCash Name: <b>Ali Khan</b> | Number: <b>03007654321</b>";
+            else if(method === 'Binance ID') box.innerHTML = "Send amount to Binance Pay ID Name: <b>VoteBattle</b> | ID: <b>98765432</b>";
+            else box.innerHTML = "Send USDT to TRC20 Address: <b>TXYZ123456789ABCDEFAWESOMESWAP</b>";
         }
 
         function switchWalletTab(tab) {
@@ -478,13 +492,16 @@
 
                 const method = document.getElementById('dep-method').value;
                 const amount = parseFloat(document.getElementById('dep-amount').value);
-                if(!amount || amount <= 0) { alert("Enter valid amount"); return; }
+                const tid = document.getElementById('dep-tid').value.trim();
+                
+                if(!amount || amount <= 0 || !tid) { alert("Enter valid amount and Transaction ID (TID)"); return; }
 
                 db.ref(`transactions/${userId}`).push({
-                    type: 'Deposit', method, amount, status: 'Pending', timestamp: Date.now()
+                    type: 'Deposit', method, amount, tid, status: 'Pending', timestamp: Date.now()
                 });
-                alert("Deposit request submitted!");
+                alert("Deposit request submitted successfully!");
                 document.getElementById('dep-amount').value = '';
+                document.getElementById('dep-tid').value = '';
             });
         }
 
@@ -495,20 +512,23 @@
                 if(hasPending) { alert("Aapki request pehle se pending/processing mein hai!"); return; }
 
                 const method = document.getElementById('wd-method').value;
-                const account = document.getElementById('wd-account').value;
+                const accName = document.getElementById('wd-name').value.trim();
+                const account = document.getElementById('wd-account').value.trim();
                 const amount = parseFloat(document.getElementById('wd-amount').value);
-                if(!account || !amount || amount <= 0) { alert("Fill all details"); return; }
+
+                if(!accName || !account || !amount || amount <= 0) { alert("Fill all details correctly"); return; }
                 if(amount > balance) { alert("Insufficient balance!"); return; }
 
                 balance -= amount;
                 document.getElementById('user-balance').innerText = balance;
 
                 db.ref(`transactions/${userId}`).push({
-                    type: 'Withdrawal', method, account, amount, status: 'Pending', timestamp: Date.now()
+                    type: 'Withdrawal', method, accName, account, amount, status: 'Pending', timestamp: Date.now()
                 });
                 alert("Withdrawal request submitted!");
-                document.getElementById('wd-amount').value = '';
+                document.getElementById('wd-name').value = '';
                 document.getElementById('wd-account').value = '';
+                document.getElementById('wd-amount').value = '';
             });
         }
 
@@ -526,11 +546,13 @@
                 snapshot.forEach((child) => {
                     const tx = child.val();
                     if(tx.timestamp >= twentyDaysAgo) {
+                        let dateStr = new Date(tx.timestamp).toLocaleString();
                         html = `
                             <div class="history-item">
                                 <div>
                                     <strong style="color:${tx.type === 'Deposit' ? '#34d399':'#fb7185'}">${tx.type} (${tx.method})</strong>
-                                    <div style="color:#94a3b8; font-size:10px;">Rs. ${tx.amount}</div>
+                                    <div style="color:#94a3b8; font-size:10px;">Rs. ${tx.amount} ${tx.tid ? '| TID: '+tx.tid : ''}</div>
+                                    <div style="color:#64748b; font-size:9px;">${dateStr}</div>
                                 </div>
                                 <span class="status-tag status-pending">${tx.status}</span>
                             </div>
@@ -564,11 +586,13 @@
                         const myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
                         const oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
                         const isWin = myVotes >= oppVotes;
+                        let dateStr = new Date(m.createdAt).toLocaleString();
                         html = `
                             <div class="history-item">
                                 <div>
                                     <strong>Match #${child.key.substring(6)}</strong>
                                     <div style="color:#94a3b8; font-size:10px;">Votes: You (${myVotes}) vs Opp (${oppVotes})</div>
+                                    <div style="color:#64748b; font-size:9px;">${dateStr}</div>
                                 </div>
                                 <span style="font-weight:bold; color:${isWin ? '#34d399':'#f43f5e'}">${isWin ? 'WIN' : 'LOSS'}</span>
                             </div>
