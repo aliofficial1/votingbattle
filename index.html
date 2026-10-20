@@ -186,14 +186,12 @@
         </div>
     </div>
 
-    <!-- AUTH MODAL (LOGIN / SIGNUP / FORGOT) -->
+    <!-- AUTH MODAL -->
     <div id="auth-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="auth-title" style="font-size: 16px; font-weight: bold;">Login to VoteBattle</h3>
             </div>
-
-            <!-- LOGIN FORM -->
             <div id="form-login">
                 <label style="font-size: 11px; color:#94a3b8;">Gmail</label>
                 <input type="email" id="login-email" placeholder="Enter your gmail...">
@@ -205,8 +203,6 @@
                     <span style="color: #f87171; cursor: pointer;" onclick="switchAuthView('forgot')">Forgot Password?</span>
                 </div>
             </div>
-
-            <!-- SIGNUP FORM -->
             <div id="form-signup" class="hidden">
                 <label style="font-size: 11px; color:#94a3b8;">Username</label>
                 <input type="text" id="signup-username" placeholder="Enter username...">
@@ -219,8 +215,6 @@
                     <span style="color: #38bdf8; cursor: pointer;" onclick="switchAuthView('login')">Already have an account? Login</span>
                 </div>
             </div>
-
-            <!-- FORGOT PASSWORD FORM -->
             <div id="form-forgot" class="hidden">
                 <label style="font-size: 11px; color:#94a3b8;">Enter your registered Gmail</label>
                 <input type="email" id="forgot-email" placeholder="Enter gmail...">
@@ -232,11 +226,11 @@
         </div>
     </div>
 
-    <!-- SUSPENDED ACCOUNT MODAL -->
+    <!-- SUSPENDED MODAL -->
     <div id="suspended-modal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align: center;">
             <h2 style="color: #ef4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">Your Account Suspended</h2>
-            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">Your account has been suspended by the administration. Please contact support for assistance.</p>
+            <p style="color: #94a3b8; font-size: 12px; margin-bottom: 16px;">Your account has been suspended by the administration.</p>
             <button onclick="openSupportModal()" class="primary-btn" style="background: #ef4444; padding: 10px; margin-bottom: 10px;">Contact Support</button>
             <button onclick="handleLogout()" class="secondary-btn" style="background: #1e293b; border: 1px solid #334155; padding: 10px;">Logout</button>
         </div>
@@ -249,13 +243,11 @@
                 <h3 style="font-size: 16px; font-weight: bold;">Wallet & Transactions</h3>
                 <button class="close-modal" onclick="closeWalletModal()">✕</button>
             </div>
-            
             <div class="tab-grid-3">
                 <button class="tab-btn active" id="tab-deposit-btn" onclick="switchWalletTab('deposit')">Deposit</button>
                 <button class="tab-btn" id="tab-withdraw-btn" onclick="switchWalletTab('withdraw')">Withdraw</button>
                 <button class="tab-btn" id="tab-status-btn" onclick="switchWalletTab('status')">Status</button>
             </div>
-
             <div id="wallet-deposit-section">
                 <label style="font-size: 11px; color:#94a3b8;">Select Method</label>
                 <select id="dep-method" onchange="updateDepositInstructions()">
@@ -264,23 +256,15 @@
                     <option value="Binance ID">Binance ID</option>
                     <option value="USDT Wallet">USDT Wallet</option>
                 </select>
-
-                <div id="dep-instructions" class="info-box">
-                    Send amount to EasyPaisa Name: <b>Ali Khan</b> | Number: <b>03001234567</b>
-                </div>
-
+                <div id="dep-instructions" class="info-box">Send amount to EasyPaisa Name: <b>Ali Khan</b> | Number: <b>03001234567</b></div>
                 <label style="font-size: 11px; color:#94a3b8;">Sender Account Number</label>
                 <input type="text" id="dep-sender-acc" placeholder="Enter your account number...">
-
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="dep-amount" placeholder="Enter amount...">
-
                 <label style="font-size: 11px; color:#94a3b8;">Transaction ID / TID</label>
                 <input type="text" id="dep-tid" placeholder="Enter 11-digit Transaction ID...">
-
                 <button onclick="submitDeposit()" class="primary-btn" style="padding: 10px;">Submit Deposit Request</button>
             </div>
-
             <div id="wallet-withdraw-section" class="hidden">
                 <label style="font-size: 11px; color:#94a3b8;">Select Method</label>
                 <select id="wd-method">
@@ -289,19 +273,14 @@
                     <option value="Binance ID">Binance ID</option>
                     <option value="USDT Wallet">USDT Wallet</option>
                 </select>
-
                 <label style="font-size: 11px; color:#94a3b8;">Account Holder Name</label>
                 <input type="text" id="wd-name" placeholder="Enter account holder name...">
-
                 <label style="font-size: 11px; color:#94a3b8;">Account Number / Wallet Details</label>
                 <input type="text" id="wd-account" placeholder="Account Number or ID...">
-
                 <label style="font-size: 11px; color:#94a3b8;">Amount (Rs)</label>
                 <input type="number" id="wd-amount" placeholder="Enter amount...">
-
                 <button onclick="submitWithdraw()" class="primary-btn" style="padding: 10px;">Submit Withdrawal Request</button>
             </div>
-
             <div id="wallet-status-section" class="hidden">
                 <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #38bdf8;">Recent Status (Last 20 Days)</h4>
                 <div id="transaction-list" style="max-height: 200px; overflow-y: auto;"></div>
@@ -316,9 +295,7 @@
                 <h3 style="font-size: 16px; font-weight: bold;">Support Chat</h3>
                 <button class="close-modal" onclick="closeSupportModal()">✕</button>
             </div>
-            
             <div id="support-chat-box" class="chat-box"></div>
-
             <div style="display: flex; gap: 8px;">
                 <input type="text" id="support-input" placeholder="Type your message..." style="margin-bottom:0;">
                 <button onclick="sendSupportMessage()" class="go-btn" style="padding: 0 12px;">Send</button>
@@ -333,12 +310,10 @@
                 <h3 style="font-size: 16px; font-weight: bold;">User Profile</h3>
                 <button class="close-modal" onclick="closeProfileModal()">✕</button>
             </div>
-            
             <div style="background: #020617; border: 1px solid #1e293b; padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center;">
                 <span style="font-size: 11px; color: #94a3b8; display: block;">Your 8-Digit User ID</span>
                 <span id="profile-uid" style="font-size: 18px; font-weight: 900; color: #38bdf8; font-family: monospace;">--------</span>
             </div>
-
             <div style="margin-bottom: 12px;">
                 <label style="font-size: 11px; color:#94a3b8;">Change Your Name</label>
                 <div style="display: flex; gap: 8px; margin-top: 4px;">
@@ -346,14 +321,11 @@
                     <button onclick="updateUserName()" class="go-btn" style="padding: 0 12px;">Save</button>
                 </div>
             </div>
-
             <button onclick="toggleMatchHistory()" class="primary-btn" style="padding: 10px; font-size: 12px; margin-bottom: 12px; background: #1e293b; border: 1px solid #334155;">View Match History (Last 15 Days)</button>
-
             <div id="match-history-container" class="hidden">
                 <h4 style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #c084fc;">Match History</h4>
                 <div id="match-history-list" style="max-height: 150px; overflow-y: auto;"></div>
             </div>
-
             <button onclick="handleLogout()" class="secondary-btn" style="background: #ef4444; margin-top: 10px; padding: 10px;">Logout</button>
         </div>
     </div>
@@ -378,14 +350,12 @@
         let currentMatchId = null;
         let timerInterval = null;
 
-        // Auth state observer with Loading Splash
         auth.onAuthStateChanged((user) => {
             document.getElementById('loading-modal').classList.add('hidden');
             if (user) {
                 const shortId = user.uid.substring(0, 8);
                 userId = shortId;
                 
-                // Check if suspended
                 db.ref(`users/${shortId}`).on('value', (snapshot) => {
                     const data = snapshot.val();
                     if(data && data.suspended) {
@@ -402,7 +372,6 @@
                     }
                 });
 
-                // Support Badge Listener
                 db.ref(`support_chats/${userId}`).on('value', (snapshot) => {
                     let unreadCount = 0;
                     snapshot.forEach((child) => {
@@ -415,6 +384,13 @@
                         badge.classList.remove('hidden');
                     } else {
                         badge.classList.add('hidden');
+                    }
+                });
+
+                db.ref(`user_active_match/${userId}`).on('value', (snapshot) => {
+                    if(snapshot.exists()) {
+                        const mId = snapshot.val().matchId;
+                        enterConfirmationScreen(mId);
                     }
                 });
 
@@ -446,69 +422,40 @@
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value.trim();
 
-            if(!username || !email || !password) {
-                alert("Please fill all fields!");
-                return;
-            }
+            if(!username || !email || !password) { alert("Please fill all fields!"); return; }
 
             auth.createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     const uid = userCredential.user.uid;
                     const shortId = uid.substring(0, 8);
                     db.ref(`users/${shortId}`).set({
-                        uid: shortId,
-                        username: username,
-                        email: email,
-                        balance: 0,
-                        suspended: false,
-                        createdAt: Date.now()
+                        uid: shortId, username: username, email: email, balance: 0, suspended: false, createdAt: Date.now()
                     });
                     alert("Account created successfully!");
                 })
-                .catch((error) => {
-                    alert(error.message);
-                });
+                .catch((error) => { alert(error.message); });
         }
 
         function handleLogin() {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
-
-            if(!email || !password) {
-                alert("Please enter email and password!");
-                return;
-            }
-
-            auth.signInWithEmailAndPassword(email, password)
-                .catch((error) => {
-                    alert(error.message);
-                });
+            if(!email || !password) { alert("Please enter email and password!"); return; }
+            auth.signInWithEmailAndPassword(email, password).catch((error) => { alert(error.message); });
         }
 
         function handleForgotPassword() {
             const email = document.getElementById('forgot-email').value.trim();
-            if(!email) {
-                alert("Please enter your registered Gmail!");
-                return;
-            }
-
-            auth.sendPasswordResetEmail(email)
-                .then(() => {
-                    alert("Password reset email sent! Check your inbox.");
-                    switchAuthView('login');
-                })
-                .catch((error) => {
-                    alert(error.message);
-                });
+            if(!email) { alert("Please enter your registered Gmail!"); return; }
+            auth.sendPasswordResetEmail(email).then(() => {
+                alert("Password reset email sent! Check your inbox.");
+                switchAuthView('login');
+            }).catch((error) => { alert(error.message); });
         }
 
         function handleLogout() {
-            auth.signOut().then(() => {
-                location.reload();
-            });
+            auth.signOut().then(() => { location.reload(); });
         }
 
-        // Admin Login 6-Tap Gesture
         let logoTapCount = 0;
         let logoTapTimer = null;
         function handleLogoClick() {
@@ -540,12 +487,8 @@
 
         function verifyAdminCode() {
             const code = document.getElementById('admin-secret-input').value;
-            if(code === "ali100") {
-                window.location.href = "admin.html";
-            } else {
-                alert("Incorrect Code!");
-                closeAdminLoginModal();
-            }
+            if(code === "ali100") { window.location.href = "admin.html"; }
+            else { alert("Incorrect Code!"); closeAdminLoginModal(); }
         }
         function closeAdminLoginModal() {
             const overlay = document.getElementById('admin-login-overlay');
@@ -577,11 +520,7 @@
             const text = document.getElementById('support-input').value.trim();
             if(!text) return;
             db.ref(`support_chats/${userId}`).push({
-                sender: 'user',
-                text: text,
-                seen: false,
-                userRead: true,
-                timestamp: Date.now()
+                sender: 'user', text: text, seen: false, userRead: true, timestamp: Date.now()
             });
             document.getElementById('support-input').value = '';
             loadSupportChat();
@@ -790,17 +729,7 @@
 
             const queueKey = userId;
             db.ref(`queues/${selectedFee}/${queueKey}`).set({
-                userId: userId,
-                userName: userName,
-                fee: selectedFee,
-                timestamp: Date.now()
-            });
-
-            db.ref(`user_active_match/${userId}`).on('value', (snapshot) => {
-                if(snapshot.exists()) {
-                    const mId = snapshot.val().matchId;
-                    enterConfirmationScreen(mId);
-                }
+                userId: userId, userName: userName, fee: selectedFee, timestamp: Date.now()
             });
         }
 
@@ -819,7 +748,6 @@
             switchScreen('screen-confirm');
             document.getElementById('battle-match-id').innerText = `ID: #${matchId}`;
             
-            // 2 Hours Real-time Countdown Timer (7200 seconds)
             startCountdownTimer(7200);
 
             db.ref(`matches/${matchId}`).on('value', (snapshot) => {
@@ -919,4 +847,4 @@
         };
     </script>
 </body>
-</html>
+</html>  

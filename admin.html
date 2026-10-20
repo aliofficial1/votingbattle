@@ -20,7 +20,7 @@
         h2 { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #38bdf8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
         
         input, select { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; margin-bottom: 8px; outline: none; }
-        input:focus { border-color: #38bdf8; }
+        input:focus, select:focus { border-color: #38bdf8; }
 
         .btn { background: #38bdf8; color: #020617; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
         .btn-danger { background: #ef4444; color: white; }
@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    <!-- Create Custom Match with Bot Lobby & Unlimited Admin Voting -->
+    <!-- Create Custom Match with Select User Dropdown & Bot Lobby -->
     <div class="card" style="border: 1px solid #38bdf8;">
         <h2>Create Custom Match (Bot / Opponent)</h2>
         <div class="grid-2" style="margin-bottom:0;">
@@ -71,8 +71,10 @@
                 </select>
             </div>
             <div>
-                <label style="font-size:11px; color:#94a3b8;">Real User ID</label>
-                <input type="text" id="custom-user-id" placeholder="Enter 8-digit User ID...">
+                <label style="font-size:11px; color:#94a3b8;">Select User from Queue</label>
+                <select id="custom-user-select">
+                    <option value="">-- Select User --</option>
+                </select>
             </div>
         </div>
         <div style="margin-top: 8px;">
@@ -200,9 +202,12 @@
                 db.ref('matches').once('value', (matchSnap) => {
                     const list50 = document.getElementById('queue-50-list');
                     const list100 = document.getElementById('queue-100-list');
+                    const userSelect = document.getElementById('custom-user-select');
+                    
                     list50.innerHTML = ''; list100.innerHTML = '';
-                    let h50 = '', h100 = '';
+                    userSelect.innerHTML = '<option value="">-- Select User from Queue --</option>';
 
+                    let h50 = '', h100 = '';
                     let q50 = queueSnap.child('50').val() || {};
                     let q100 = queueSnap.child('100').val() || {};
 
@@ -221,34 +226,44 @@
                         return { wins, losses, totalVotes };
                     }
 
+                    // Populate 50 PKR Queue
                     Object.keys(q50).forEach(uId => {
                         let u = q50[uId];
+                        let uName = u.userName || 'User';
                         let stats = getUserStats(uId);
+                        
                         h50 += `
                             <div class="item-box">
                                 <div>
-                                    <strong>${u.userName} (${u.userId})</strong><br>
+                                    <strong>${uName} (${uId})</strong><br>
                                     <small style="color:#34d399;">Wins: ${stats.wins} | Losses: ${stats.losses}</small><br>
                                     <small style="color:#c084fc;">High Votes: ${stats.totalVotes}</small>
                                 </div>
-                                <button class="btn btn-success" onclick="pairUsers('50', '${u.userId}', '${u.userName}')">Pair Match</button>
+                                <button class="btn btn-success" onclick="pairUsers('50', '${uId}', '${uName}')">Pair Match</button>
                             </div>
                         `;
+
+                        userSelect.innerHTML += `<option value="${uId}">${uName} (${uId}) - 50 PKR</option>`;
                     });
 
+                    // Populate 100 PKR Queue
                     Object.keys(q100).forEach(uId => {
                         let u = q100[uId];
+                        let uName = u.userName || 'User';
                         let stats = getUserStats(uId);
+                        
                         h100 += `
                             <div class="item-box">
                                 <div>
-                                    <strong>${u.userName} (${u.userId})</strong><br>
+                                    <strong>${uName} (${uId})</strong><br>
                                     <small style="color:#34d399;">Wins: ${stats.wins} | Losses: ${stats.losses}</small><br>
                                     <small style="color:#c084fc;">High Votes: ${stats.totalVotes}</small>
                                 </div>
-                                <button class="btn btn-success" onclick="pairUsers('100', '${u.userId}', '${u.userName}')">Pair Match</button>
+                                <button class="btn btn-success" onclick="pairUsers('100', '${uId}', '${uName}')">Pair Match</button>
                             </div>
                         `;
+
+                        userSelect.innerHTML += `<option value="${uId}">${uName} (${uId}) - 100 PKR</option>`;
                     });
 
                     list50.innerHTML = h50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
@@ -265,7 +280,7 @@
                 let oppId = "", oppName = "";
                 if(users.length > 0) {
                     oppId = users[0].userId;
-                    oppName = users[0].userName;
+                    oppName = users[0].userName || 'Player 2';
                 } else {
                     oppId = "Challenger_" + Math.floor(100 + Math.random()*900);
                     oppName = "Challenger Player";
@@ -290,14 +305,13 @@
 
         function createCustomMatch() {
             const fee = parseInt(document.getElementById('custom-fee').value);
-            const uId = document.getElementById('custom-user-id').value.trim();
+            const uId = document.getElementById('custom-user-select').value;
             const botName = document.getElementById('custom-bot-name').value.trim();
 
-            if(!uId || !botName) { alert("Please enter User ID and Opponent Name"); return; }
+            if(!uId || !botName) { alert("Please select a user from queue and enter opponent name!"); return; }
 
             db.ref(`users/${uId}`).once('value', (snapshot) => {
-                if(!snapshot.exists()) { alert("User ID not found!"); return; }
-                const userData = snapshot.val();
+                const userData = snapshot.val() || {};
                 const uName = userData.username || 'User';
 
                 const matchId = 'match_' + Date.now();
@@ -319,8 +333,8 @@
                 db.ref(`user_active_match/${uId}`).set({ matchId });
 
                 alert("Custom match created successfully with confirmation lobby!");
-                document.getElementById('custom-user-id').value = '';
                 document.getElementById('custom-bot-name').value = '';
+                document.getElementById('custom-user-select').selectedIndex = 0;
             });
         }
 
@@ -334,19 +348,21 @@
                 snapshot.forEach((child) => {
                     let m = child.val();
                     let mKey = child.key;
+                    let p1 = m.p1Name || 'Player 1';
+                    let p2 = m.p2Name || 'Player 2';
                     let box = `
                         <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
                             <div style="display:flex; justify-content:space-between; width:100%;">
                                 <strong>#${mKey.substring(6)} (${m.fee} PKR)</strong>
                                 <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
                             </div>
-                            <small>${m.p1Name} vs ${m.p2Name}</small>
+                            <small>${p1} vs ${p2}</small>
                             <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                                 <span style="color:#38bdf8;">Votes: ${m.votesP1||0} vs ${m.votesP2||0}</span>
                                 <div style="display:flex; gap:4px;">
-                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 1)" style="padding:2px 6px; font-size:10px;">+1 ${m.p1Name}</button>
+                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p1}</button>
                                     <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
-                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 1)" style="padding:2px 6px; font-size:10px;">+1 ${m.p2Name}</button>
+                                    <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p2}</button>
                                     <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
                                 </div>
                             </div>
@@ -370,7 +386,6 @@
 
         function deleteMatch(k) { db.ref(`matches/${k}`).remove(); alert("Match cancelled"); }
 
-        
         function loadOneDayReport() {
             const reportEl = document.getElementById('one-day-report');
             const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
