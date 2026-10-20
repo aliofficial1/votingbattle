@@ -473,18 +473,27 @@
         }
 
         function approveTx(uId, txKey, type, amount) {
+            // First update transaction status to Approved
             db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' }, (error) => {
                 if(error) {
                     alert("Error approving transaction!");
                     return;
                 }
+                
+                // If Deposit, safely fetch user node and update balance by adding amount
                 if(type === 'Deposit') {
                     db.ref(`users/${uId}`).once('value', (snapshot) => {
                         let userData = snapshot.val() || {};
                         let currentBal = parseFloat(userData.balance || 0);
-                        let newBal = currentBal + parseFloat(amount);
+                        let addedAmount = parseFloat(amount || 0);
+                        let newBal = currentBal + addedAmount;
+
                         db.ref(`users/${uId}`).update({ balance: newBal }, (err) => {
-                            if(!err) alert(`Deposit approved! Rs. ${amount} successfully added to user balance.`);
+                            if(!err) {
+                                alert(`Deposit approved successfully! Rs. ${addedAmount} added. New Balance: Rs. ${newBal}`);
+                            } else {
+                                alert("Failed to update user balance in database.");
+                            }
                         });
                     });
                 } else {
