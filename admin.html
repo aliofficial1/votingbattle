@@ -3,167 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoteBattle - Admin Dashboard</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <title>Admin Dashboard - Match & Earn</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: #020617; color: #f8fafc; min-height: 100vh; padding: 16px; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid #1e293b; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; }
-        .logo { font-weight: 900; font-size: 18px; color: #38bdf8; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-
-        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-        h2 { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #38bdf8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
-        
-        input, select { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; margin-bottom: 8px; outline: none; }
-        input:focus, select:focus { border-color: #38bdf8; }
-
-        .btn { background: #38bdf8; color: #020617; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-secondary { background: #1e293b; color: #f8fafc; border: 1px solid #334155; }
-
-        .item-box { background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 20px; }
         .hidden { display: none !important; }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
-        .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; width: 100%; max-width: 450px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
+        .form-control { width: 100%; padding: 10px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; font-size: 14px; margin-bottom: 10px; }
+        .btn-primary { padding: 10px 15px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-primary:hover { background: #0ea5e9; }
         
-        .chat-msg { padding: 8px 12px; border-radius: 8px; font-size: 12px; max-width: 80%; margin-bottom: 6px; }
-        .chat-user { background: #1e293b; color: #f8fafc; align-self: flex-start; }
-        .chat-admin { background: #7c3aed; color: #fff; align-self: flex-end; }
+        /* Login Box */
+        #adminLoginScreen { max-width: 400px; margin: 100px auto; background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">VoteBattle Admin Panel</div>
-        <div style="display:flex; gap:8px;">
-            <button class="btn btn-secondary" onclick="window.location.href='index.html'">Back to Home</button>
-            <button class="btn btn-danger" onclick="openSuspendedModal()">Suspended Accounts</button>
+
+    <!-- Admin Login Screen -->
+    <div id="adminLoginScreen">
+        <h2 style="color: #38bdf8; margin-bottom: 20px;">Admin Login Panel</h2>
+        <div style="text-align: left;" class="form-group">
+            <label style="font-size: 13px; color: #94a3b8; display: block; margin-bottom: 5px;">Admin Password</label>
+            <input type="password" id="adminPassInput" class="form-control" placeholder="Enter password">
         </div>
+        <button class="btn-primary" style="width: 100%;" onclick="verifyAdminLogin()">Login Dashboard</button>
     </div>
 
-    <!-- Match Queues with Real User Names -->
-    <div class="grid-2">
-        <div class="card">
-            <h2>Queue Match Requests (Rs. 50)</h2>
-            <div id="queue-50-list">Loading queue...</div>
+    <!-- Admin Dashboard Main -->
+    <div id="adminDashboardMain" class="hidden container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #38bdf8;">Admin Control Dashboard</h2>
+            <button onclick="location.reload()" style="background: #ef4444; border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Logout</button>
         </div>
-        <div class="card">
-            <h2>Queue Match Requests (Rs. 100)</h2>
-            <div id="queue-100-list">Loading queue...</div>
-        </div>
-    </div>
 
-    <!-- Create Custom Match / Bot Lobby (Fee Matched) -->
-    <div class="card" style="border: 1px solid #38bdf8;">
-        <h2>Create Custom / Bot Match (Fee Matched)</h2>
-        <div class="grid-2" style="margin-bottom:0;">
-            <div>
-                <label style="font-size:11px; color:#94a3b8;">Select Fee (Must Match User)</label>
-                <select id="custom-fee">
-                    <option value="50">Rs. 50</option>
-                    <option value="100">Rs. 100</option>
-                </select>
-            </div>
-            <div>
-                <label style="font-size:11px; color:#94a3b8;">Select User from Queue</label>
-                <select id="custom-user-select">
-                    <option value="">-- Select User --</option>
-                </select>
-            </div>
-        </div>
-        <div style="margin-top: 8px;">
-            <label style="font-size:11px; color:#94a3b8;">Opponent / Bot Name</label>
-            <input type="text" id="custom-bot-name" placeholder="Enter opponent or bot name...">
-        </div>
-        <button class="btn btn-success" onclick="createCustomMatch()" style="width:100%; margin-top:8px;">Start Custom Match (20 Min Confirm)</button>
-    </div>
-
-    <!-- Active Matches with Unlimited Voting Control -->
-    <div class="grid-2">
-        <div class="card">
-            <h2>Active Matches (Rs. 50 Fee)</h2>
-            <div id="matches-50-list">Loading...</div>
-        </div>
-        <div class="card">
-            <h2>Active Matches (Rs. 100 Fee)</h2>
-            <div id="matches-100-list">Loading...</div>
-        </div>
-    </div>
-
-    <!-- Last 1 Day Report -->
-    <div class="card">
-        <h2>Last 1 Day Report (Stats)</h2>
-        <div id="one-day-report" style="font-size:12px; color:#94a3b8; line-height:1.6;">Loading report...</div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <h2>Deposit Requests</h2>
-            <div id="deposit-list">Loading...</div>
-            <button id="dep-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('deposit')" style="width:100%; margin-top:8px;">Show More</button>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="btn-primary" style="flex: 1;" onclick="switchAdminTab('users')">Manage Users</button>
+            <button class="btn-primary" style="flex: 1;" onclick="switchAdminTab('requests')">Transactions & Requests</button>
+            <button class="btn-primary" style="flex: 1;" onclick="switchAdminTab('chats')">Support Chats</button>
         </div>
 
         <div class="card">
-            <h2>Withdrawal Requests</h2>
-            <div id="withdraw-list">Loading...</div>
-            <button id="wd-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('withdraw')" style="width:100%; margin-top:8px;">Show More</button>
+            <div id="adminContentArea" style="font-size: 13px; color: #94a3b8;">Select a tab above to manage data.</div>
         </div>
     </div>
 
-    <div class="grid-2">
-        <div class="card">
-            <h2>User Management</h2>
-            <input type="text" id="search-user-id" placeholder="Enter 8-Digit User ID...">
-            <button class="btn" onclick="searchUser()" style="width:100%; margin-bottom:10px;">Search User Stats</button>
-            
-            <div id="user-info-box" class="hidden" style="background:#020617; padding:10px; border-radius:8px; border:1px solid #1e293b; font-size:12px;">
-                <p style="margin-bottom:4px;">ID: <span id="u-id" style="color:#38bdf8;">---</span></p>
-                <p style="margin-bottom:4px;">Balance: Rs. <span id="u-bal">0</span></p>
-                <p style="margin-bottom:4px; color:#34d399;">Wins: <span id="u-wins">0</span> | Losses: <span id="u-losses" style="color:#ef4444;">0</span></p>
-                <input type="number" id="new-user-bal" placeholder="New Balance...">
-                <button class="btn btn-success" onclick="updateUserBalance()" style="width:100%; margin-bottom:6px;">Change Balance</button>
-                <button id="suspend-btn" class="btn btn-danger" onclick="toggleAccountSuspension()" style="width:100%;">Suspend Account</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Support Chats</h2>
-            <div id="support-users-list" style="max-height: 220px; overflow-y: auto;">Loading chats...</div>
-            <button id="chat-show-more" class="btn btn-secondary hidden" onclick="toggleShowMore('chat')" style="width:100%; margin-top:8px;">Show More</button>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div id="suspended-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-                <h3 style="font-size:15px; color:#ef4444;">Suspended Accounts List</h3>
-                <button class="btn btn-secondary" onclick="closeSuspendedModal()">✕</button>
-            </div>
-            <div id="suspended-list-container">Loading...</div>
-        </div>
-    </div>
-
-    <div id="chat-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
-                <h3 id="chat-modal-title" style="font-size:15px;">Chat with User</h3>
-                <button class="btn btn-secondary" onclick="closeChatModal()">✕</button>
-            </div>
-            <div id="admin-chat-box" style="height:220px; overflow-y:auto; background:#020617; border:1px solid #1e293b; border-radius:8px; padding:10px; margin-bottom:10px; display:flex; flex-direction:column;"></div>
-            <div style="display:flex; gap:8px;">
-                <input type="text" id="admin-reply-input" placeholder="Type reply..." style="margin-bottom:0;">
-                <button class="btn" onclick="sendAdminReply()">Send</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Firebase Script Logic -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDGu1r9uSKymwTH_5nQIwW8qKC9TYCrPow",
@@ -174,470 +62,126 @@
             messagingSenderId: "572901936550",
             appId: "1:572901936550:web:a3918de85c585d51975367"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let showAllDeposits = false;
-        let showAllWithdraws = false;
-        let showAllChats = false;
-        let activeChatUserId = null;
-        let searchedUserId = null;
-
-        window.onload = function() {
-            loadQueues();
-            loadAllDeposits();
-            loadAllWithdrawals();
-            loadMatches();
-            loadSupportChatsList();
-            loadOneDayReport();
-        };
-
-        function loadQueues() {
-            db.ref('queues').on('value', (queueSnap) => {
-                db.ref('users').once('value', (userSnap) => {
-                    const list50 = document.getElementById('queue-50-list');
-                    const list100 = document.getElementById('queue-100-list');
-                    const userSelect = document.getElementById('custom-user-select');
-                    
-                    list50.innerHTML = ''; list100.innerHTML = '';
-                    userSelect.innerHTML = '<option value="">-- Select User from Queue --</option>';
-
-                    let h50 = '', h100 = '';
-                    let q50 = queueSnap.child('50').val() || {};
-                    let q100 = queueSnap.child('100').val() || {};
-
-                    Object.keys(q50).forEach(qKey => {
-                        let q = q50[qKey];
-                        let uId = q.userId;
-                        let uData = userSnap.child(uId).val() || {};
-                        let realName = uData.username || q.userName || 'User';
-
-                        h50 += `
-                            <div class="item-box">
-                                <div>
-                                    <strong>${realName}</strong><br>
-                                    <small style="color:#38bdf8;">ID: ${uId} | Fee: 50 PKR</small>
-                                </div>
-                                <button class="btn btn-success" onclick="pairUsers('50', '${uId}', '${realName}')">Pair Match</button>
-                            </div>
-                        `;
-                        userSelect.innerHTML += `<option value="${uId}">${realName} (${uId}) - 50 PKR</option>`;
-                    });
-
-                    Object.keys(q100).forEach(qKey => {
-                        let q = q100[qKey];
-                        let uId = q.userId;
-                        let uData = userSnap.child(uId).val() || {};
-                        let realName = uData.username || q.userName || 'User';
-
-                        h100 += `
-                            <div class="item-box">
-                                <div>
-                                    <strong>${realName}</strong><br>
-                                    <small style="color:#38bdf8;">ID: ${uId} | Fee: 100 PKR</small>
-                                </div>
-                                <button class="btn btn-success" onclick="pairUsers('100', '${uId}', '${realName}')">Pair Match</button>
-                            </div>
-                        `;
-                        userSelect.innerHTML += `<option value="${uId}">${realName} (${uId}) - 100 PKR</option>`;
-                    });
-
-                    list50.innerHTML = h50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
-                    list100.innerHTML = h100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No users in queue</div>';
-                });
-            });
+        function verifyAdminLogin() {
+            const pass = document.getElementById('adminPassInput').value;
+            if(pass === 'ali100') {
+                document.getElementById('adminLoginScreen').classList.add('hidden');
+                document.getElementById('adminDashboardMain').classList.remove('hidden');
+                switchAdminTab('users');
+            } else {
+                alert('Incorrect Admin Password!');
+            }
         }
 
-        function pairUsers(fee, uId, uName) {
-            db.ref(`queues/${fee}`).once('value', (snap) => {
-                let users = [];
-                snap.forEach(c => { 
-                    if(c.val().userId !== uId) users.push(c.val()); 
-                });
-                
-                db.ref('users').once('value', (userSnap) => {
-                    let oppId = "", oppName = "";
-                    if(users.length > 0) {
-                        oppId = users[0].userId;
-                        let oppData = userSnap.child(oppId).val() || {};
-                        oppName = oppData.username || users[0].userName || 'Player 2';
-                    } else {
-                        oppId = "Challenger_" + Math.floor(100 + Math.random()*900);
-                        oppName = "Challenger Player";
-                    }
+        function switchAdminTab(tab) {
+            let area = document.getElementById('adminContentArea');
+            area.innerHTML = 'Loading...';
 
-                    const matchId = 'match_' + Date.now();
-                    db.ref(`matches/${matchId}`).set({
-                        p1Id: uId, p1Name: uName, p2Id: oppId, p2Name: oppName, fee: parseInt(fee),
-                        status: 'confirming', p1Confirmed: false, p2Confirmed: false, votesP1: 0, votesP2: 0,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP
-                    });
-
-                    snap.forEach(c => {
-                        if(c.val().userId === uId || c.val().userId === oppId) {
-                            db.ref(`queues/${fee}/${c.key}`).remove();
-                        }
-                    });
-
-                    db.ref(`user_active_match/${uId}`).set({ matchId });
-                    if(!oppId.includes("Challenger_")) db.ref(`user_active_match/${oppId}`).set({ matchId });
-
-                    alert(`Match started between ${uName} and ${oppName}! (20 Mins Confirm Lobby)`);
-                });
-            });
-        }
-
-        function createCustomMatch() {
-            const fee = parseInt(document.getElementById('custom-fee').value);
-            const uId = document.getElementById('custom-user-select').value;
-            const botName = document.getElementById('custom-bot-name').value.trim();
-
-            if(!uId || !botName) { alert("Please select a user from queue and enter opponent/bot name!"); return; }
-
-            db.ref(`users/${uId}`).once('value', (snapshot) => {
-                const userData = snapshot.val() || {};
-                const uName = userData.username || 'User';
-
-                const matchId = 'match_' + Date.now();
-                // Bot / Custom match sent to confirmation lobby with p2Confirmed: false
-                db.ref(`matches/${matchId}`).set({
-                    p1Id: uId,
-                    p1Name: uName,
-                    p2Id: 'Bot_' + Math.floor(1000 + Math.random() * 9000),
-                    p2Name: botName,
-                    fee: fee,
-                    status: 'confirming',
-                    p1Confirmed: false,
-                    p2Confirmed: false, 
-                    votesP1: 0,
-                    votesP2: 0,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP
-                });
-
-                db.ref(`queues/${fee}`).once('value', (qSnap) => {
-                    qSnap.forEach(c => {
-                        if(c.val().userId === uId) db.ref(`queues/${fee}/${c.key}`).remove();
-                    });
-                });
-
-                db.ref(`user_active_match/${uId}`).set({ matchId });
-
-                alert("Custom / Bot match sent to confirmation lobby successfully!");
-                document.getElementById('custom-bot-name').value = '';
-                document.getElementById('custom-user-select').selectedIndex = 0;
-            });
-        }
-
-                                  function loadMatches() {
-            db.ref('matches').on('value', (snapshot) => {
-                const list50 = document.getElementById('matches-50-list');
-                const list100 = document.getElementById('matches-100-list');
-                list50.innerHTML = ''; 
-                list100.innerHTML = '';
-                let html50 = '', html100 = '';
-
-                snapshot.forEach((child) => {
-                    let m = child.val();
-                    let mKey = child.key;
-                    let p1 = m.p1Name || 'Player 1';
-                    let p2 = m.p2Name || 'Player 2';
-                    let statusText = m.status || 'active';
-                    
-                    let p1Conf = m.p1Confirmed ? 'Ready' : 'Waiting';
-                    let p2Conf = m.p2Confirmed ? 'Ready' : 'Waiting';
-
-                    let box = '';
-
-                    if (m.status === 'confirming' && !m.p2Confirmed) {
-                        box = `
-                            <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
-                                <div style="display:flex; justify-content:space-between; width:100%;">
-                                    <strong>#${mKey.substring(6)} (${m.fee} PKR) - ${statusText}</strong>
-                                    <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
-                                </div>
-                                <small>${p1} (${p1Conf}) vs ${p2} (${p2Conf})</small>
-                                <button class="btn btn-success" onclick="adminConfirmBot('${mKey}')" style="width:100%; padding:4px; font-size:11px; margin-top:4px;">Force Confirm Bot / Start Match</button>
+            if(tab === 'users') {
+                db.ref('users').once('value', snap => {
+                    area.innerHTML = '<h3 style="color:#38bdf8; margin-bottom:15px;">Registered Users</h3>';
+                    if(!snap.exists()) { area.innerHTML += 'No users found.'; return; }
+                    snap.forEach(child => {
+                        let u = child.val();
+                        let uid = child.key;
+                        area.innerHTML += `
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #334155;">
+                                <p><b>${u.name}</b> (${u.email}) - ID: ${u.userId}</p>
+                                <p>Balance: PKR ${u.balance} | Status: <b style="color:${u.status==='active'?'#10b981':'#ef4444'}">${u.status}</b></p>
+                                <button onclick="toggleUserStatus('${uid}', '${u.status}')" style="margin-top:8px; background:${u.status==='active'?'#ef4444':'#10b981'}; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">${u.status==='active'?'Suspend Account':'Activate Account'}</button>
                             </div>
                         `;
-                    } else {
-                        box = `
-                            <div class="item-box" style="flex-direction: column; align-items: flex-start; gap: 6px;">
-                                <div style="display:flex; justify-content:space-between; width:100%;">
-                                    <strong>#${mKey.substring(6)} (${m.fee} PKR) - ${statusText}</strong>
-                                    <button class="btn btn-danger" onclick="deleteMatch('${mKey}')" style="padding: 2px 6px; font-size:10px;">Cancel</button>
-                                </div>
-                                <small>${p1} vs ${p2}</small>
-                                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-top:4px;">
-                                    <span style="color:#38bdf8;">Votes: ${m.votesP1 || 0} vs ${m.votesP2 || 0}</span>
-                                    <div style="display:flex; gap:4px;">
-                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p1}</button>
-                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p1', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
-                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 1)" style="padding:2px 6px; font-size:10px;">+1 ${p2}</button>
-                                        <button class="btn btn-success" onclick="adminAddVote('${mKey}', 'p2', 10)" style="padding:2px 6px; font-size:10px;">+10</button>
+                    });
+                });
+            } else if(tab === 'requests') {
+                db.ref('transactions').once('value', snap => {
+                    area.innerHTML = '<h3 style="color:#38bdf8; margin-bottom:15px;">Deposit & Withdrawal Requests</h3>';
+                    if(!snap.exists()) { area.innerHTML += 'No requests found.'; return; }
+                    snap.forEach(child => {
+                        let t = child.val();
+                        let tid = child.key;
+                        area.innerHTML += `
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #334155;">
+                                <p>User: <b>${t.userName}</b> | Type: <b style="color:#38bdf8">${t.type.toUpperCase()}</b></p>
+                                <p>Amount: PKR ${t.amount} via <b>${t.method}</b></p>
+                                <p>Account Details: ${t.account}</p>
+                                <p>Status: <span style="color:#eab308; font-weight:bold;">${t.status}</span></p>
+                                ${t.status === 'pending' ? `
+                                    <div style="margin-top:8px;">
+                                        <button onclick="processTx('${tid}', '${t.userId}', '${t.type}',${t.amount}, 'approved')" style="background:#10b981; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; margin-right:8px;">Approve</button>
+                                        <button onclick="processTx('${tid}', '${t.userId}', '${t.type}',${t.amount}, 'rejected')" style="background:#ef4444; border:none; color:white; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">Reject</button>
                                     </div>
-                                </div>
+                                ` : ''}
                             </div>
                         `;
-                    }
-
-                    if(m.fee == 100) {
-                        html100 += box;
-                    } else {
-                        html50 += box;
-                    }
-                });
-                
-                list50.innerHTML = html50 || '<div style="color:#64748b; font-size:12px; text-align:center;">No active matches</div>';
-                list100.innerHTML = html100 || '<div style="color:#64748b; font-size:12px; text-align:center;">No active matches</div>';
-            });
-        }
-
-        function adminConfirmBot(matchId) {
-            db.ref(`matches/${matchId}`).update({
-                p2Confirmed: true,
-                status: 'active'
-            }, (error) => {
-                if (!error) {
-                    alert("Bot confirmed successfully! Match is now active.");
-                } else {
-                    alert("Error confirming bot!");
-                }
-            });
-        }
-
-
-        function adminAddVote(matchId, playerKey, count) {
-            const voteField = playerKey === 'p1' ? 'votesP1' : 'votesP2';
-            db.ref(`matches/${matchId}`).transaction((match) => {
-                if (match) match[voteField] = (match[voteField] || 0) + count;
-                return match;
-            });
-        }
-
-        function deleteMatch(k) { db.ref(`matches/${k}`).remove(); alert("Match cancelled"); }
-
-        function loadOneDayReport() {
-            const reportEl = document.getElementById('one-day-report');
-            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-
-            db.ref('matches').once('value', (snapshot) => {
-                let wins50 = 0, wins100 = 0;
-                snapshot.forEach((child) => {
-                    let m = child.val();
-                    if(m.createdAt >= oneDayAgo) {
-                        if(m.fee == 50) wins50++;
-                        if(m.fee == 100) wins100++;
-                    }
-                });
-                reportEl.innerHTML = `
-                    • 50 PKR Matches Played: <b>${wins50}</b><br>
-                    • 100 PKR Matches Played: <b>${wins100}</b>
-                `;
-            });
-        }
-
-        function loadAllDeposits() {
-            db.ref('transactions').on('value', (snapshot) => {
-                const listEl = document.getElementById('deposit-list');
-                listEl.innerHTML = '';
-                let items = [];
-                snapshot.forEach((userSnap) => {
-                    const uId = userSnap.key;
-                    userSnap.forEach((txSnap) => {
-                        let tx = txSnap.val();
-                        if(tx.type === 'Deposit' && (tx.status === 'Pending' || tx.status === 'Processing')) {
-                            items.push({ uId, txKey: txSnap.key, ...tx });
-                        }
                     });
                 });
-                if(items.length === 0) { listEl.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center;">No pending requests</div>'; return; }
-                let html = '';
-                let limit = showAllDeposits ? items.length : 4;
-                for(let i=0; i<Math.min(items.length, limit); i++) {
-                    let d = items[i];
-                    html += `
-                        <div class="item-box">
-                            <div><strong>User: ${d.uId}</strong><br><span style="color:#38bdf8;">Rs. ${d.amount} (${d.method})</span><br><small>From Acc: ${d.senderAcc || 'N/A'} | TID: ${d.tid || 'N/A'}</small></div>
-                            <div>
-                                <button class="btn btn-success" onclick="approveTx('${d.uId}', '${d.txKey}', 'Deposit', ${d.amount})">Approve</button>
-                                <button class="btn btn-danger" onclick="rejectTx('${d.uId}', '${d.txKey}')">Reject</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                listEl.innerHTML = html;
-                document.getElementById('dep-show-more').classList.toggle('hidden', items.length <= 4);
-            });
-        }
-
-        function loadAllWithdrawals() {
-            db.ref('transactions').on('value', (snapshot) => {
-                const listEl = document.getElementById('withdraw-list');
-                listEl.innerHTML = '';
-                let items = [];
-                snapshot.forEach((userSnap) => {
-                    const uId = userSnap.key;
-                    userSnap.forEach((txSnap) => {
-                        let tx = txSnap.val();
-                        if(tx.type === 'Withdrawal' && (tx.status === 'Pending' || tx.status === 'Processing')) {
-                            items.push({ uId, txKey: txSnap.key, ...tx });
-                        }
-                    });
-                });
-                if(items.length === 0) { listEl.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center;">No pending requests</div>'; return; }
-                let html = '';
-                let limit = showAllWithdraws ? items.length : 4;
-                for(let i=0; i<Math.min(items.length, limit); i++) {
-                    let w = items[i];
-                    html += `
-                        <div class="item-box">
-                            <div><strong>User: ${w.uId}</strong><br><span style="color:#f43f5e;">Rs. ${w.amount} (${w.method})</span><br><small>Name: ${w.accName} | Acc: ${w.account}</small></div>
-                            <div>
-                                <button class="btn btn-success" onclick="approveTx('${w.uId}', '${w.txKey}', 'Withdrawal', ${w.amount})">Approve</button>
-                                <button class="btn btn-danger" onclick="rejectTx('${w.uId}', '${w.txKey}')">Reject</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                listEl.innerHTML = html;
-                document.getElementById('wd-show-more').classList.toggle('hidden', items.length <= 4);
-            });
-        }
-
-        function approveTx(uId, txKey, type, amount) {
-            db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Approved' }, (error) => {
-                if(error) { alert("Error approving transaction!"); return; }
-                if(type === 'Deposit') {
-                    db.ref(`users/${uId}`).once('value', (snapshot) => {
-                        let userData = snapshot.val() || {};
-                        let currentBal = parseFloat(userData.balance || 0);
-                        let addedAmount = parseFloat(amount || 0);
-                        let newBal = currentBal + addedAmount;
-                        db.ref(`users/${uId}`).update({ balance: newBal }, (err) => {
-                            if(!err) alert(`Deposit approved! Rs. ${addedAmount} added. New Balance: Rs. ${newBal}`);
+            } else if(tab === 'chats') {
+                db.ref('chats').once('value', snap => {
+                    area.innerHTML = '<h3 style="color:#38bdf8; margin-bottom:15px;">User Support Chats</h3>';
+                    if(!snap.exists()) { area.innerHTML += 'No chat messages found.'; return; }
+                    snap.forEach(child => {
+                        let uid = child.key;
+                        area.innerHTML += `
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:10px; border:1px solid #334155;">
+                                <p style="margin-bottom:8px;">User Unique ID: <b>${uid}</b></p>
+                                <div style="max-height:120px; overflow-y:auto; background:#1e293b; padding:8px; border-radius:6px; margin-bottom:8px;">
+                        `;
+                        let chatSnap = child.val();
+                        Object.keys(chatSnap).forEach(msgKey => {
+                            let m = chatSnap[msgKey];
+                            area.innerHTML += `<p style="font-size:12px; margin-bottom:4px;"><b>${m.sender}:</b> ${m.message}</p>`;
                         });
+                        area.innerHTML += `
+                                </div>
+                                <input type="text" id="adminReply_${uid}" placeholder="Type reply to user..." class="form-control">
+                                <button onclick="sendAdminReply('${uid}')" class="btn-primary" style="padding:6px 12px; font-size:12px;">Send Reply</button>
+                            </div>
+                        `;
                     });
-                } else {
-                    alert("Withdrawal approved successfully!");
-                }
+                });
+            }
+        }
+
+        function toggleUserStatus(uid, currentStatus) {
+            let newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+            db.ref('users/' + uid).update({ status: newStatus }).then(() => {
+                alert("User status updated successfully!");
+                switchAdminTab('users');
             });
         }
 
-        function rejectTx(uId, txKey) {
-            db.ref(`transactions/${uId}/${txKey}`).update({ status: 'Rejected' });
-            alert("Request rejected.");
-        }
-
-        function searchUser() {
-            const uId = document.getElementById('search-user-id').value.trim();
-            if(!uId) { alert("Please enter User ID"); return; }
-            searchedUserId = uId;
-
-            db.ref(`users/${uId}`).once('value', (snapshot) => {
-                document.getElementById('user-info-box').classList.remove('hidden');
-                document.getElementById('u-id').innerText = uId;
-                let data = snapshot.val() || {};
-                let bal = data.balance || 0;
-                document.getElementById('u-bal').innerText = bal;
-                document.getElementById('new-user-bal').value = bal;
-
-                db.ref('matches').once('value', (matchSnap) => {
-                    let wins = 0, losses = 0;
-                    matchSnap.forEach((mChild) => {
-                        let m = mChild.val();
-                        if(m.p1Id === uId || m.p2Id === uId) {
-                            let isP1 = m.p1Id === uId;
-                            let myVotes = isP1 ? (m.votesP1 || 0) : (m.votesP2 || 0);
-                            let oppVotes = isP1 ? (m.votesP2 || 0) : (m.votesP1 || 0);
-                            if(myVotes >= oppVotes) wins++; else losses++;
-                        }
+        function processTx(tid, userId, type, amount, status) {
+            db.ref('transactions/' + tid).update({ status: status }).then(() => {
+                if(status === 'approved') {
+                    db.ref('users/' + userId).once('value', snap => {
+                        let uBal = snap.val().balance || 0;
+                        let newBal = type === 'deposit' ? uBal + amount : uBal - amount;
+                        db.ref('users/' + userId).update({ balance: newBal });
                     });
-                    document.getElementById('u-wins').innerText = wins;
-                    document.getElementById('u-losses').innerText = losses;
-                });
-            });
-        }
-
-        function updateUserBalance() {
-            if(!searchedUserId) return;
-            let nb = parseFloat(document.getElementById('new-user-bal').value);
-            db.ref(`users/${searchedUserId}`).update({ balance: nb });
-            document.getElementById('u-bal').innerText = nb;
-            alert("Balance updated successfully!");
-        }
-
-        function toggleAccountSuspension() {
-            if(!searchedUserId) return;
-            db.ref(`users/${searchedUserId}`).once('value', (snapshot) => {
-                let st = snapshot.val()?.suspended || false;
-                db.ref(`users/${searchedUserId}`).update({ suspended: !st });
-                alert(!st ? "Account Suspended" : "Account Unsuspended");
-            });
-        }
-
-        function openSuspendedModal() {
-            document.getElementById('suspended-modal').classList.remove('hidden');
-            const cont = document.getElementById('suspended-list-container');
-            cont.innerHTML = 'Loading...';
-            db.ref('users').once('value', (snapshot) => {
-                cont.innerHTML = '';
-                let h = '';
-                snapshot.forEach((child) => {
-                    if(child.val().suspended) {
-                        h += `<div class="item-box"><span>User ID: <strong>${child.key}</strong> (${child.val().username || 'N/A'})</span><button class="btn btn-success" onclick="unsuspend('${child.key}')">Unsuspend</button></div>`;
-                    }
-                });
-                cont.innerHTML = h || '<div style="color:#64748b; text-align:center;">No suspended accounts</div>';
-            });
-        }
-        function closeSuspendedModal() { document.getElementById('suspended-modal').classList.add('hidden'); }
-        function unsuspend(uId) { db.ref(`users/${uId}`).update({ suspended: false }); openSuspendedModal(); }
-
-        function loadSupportChatsList() {
-            db.ref('support_chats').on('value', (snapshot) => {
-                const listEl = document.getElementById('support-users-list');
-                listEl.innerHTML = '';
-                let chats = [];
-                snapshot.forEach((child) => { chats.push({ uId: child.key }); });
-                if(chats.length === 0) { listEl.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center;">No chats</div>'; return; }
-                let html = '';
-                let limit = showAllChats ? chats.length : 4;
-                for(let i=0; i<Math.min(chats.length, limit); i++) {
-                    let c = chats[i];
-                    html += `<div class="item-box"><span>User: <strong>${c.uId}</strong></span><button class="btn" onclick="openChatModal('${c.uId}')">Chat</button></div>`;
                 }
-                listEl.innerHTML = html;
-                document.getElementById('chat-show-more').classList.toggle('hidden', chats.length <= 4);
+                alert("Transaction " + status + "!");
+                switchAdminTab('requests');
             });
         }
 
-        function openChatModal(uId) {
-            activeChatUserId = uId;
-            document.getElementById('chat-modal').classList.remove('hidden');
-            document.getElementById('chat-modal-title').innerText = `Chat: ${uId}`;
-            const cb = document.getElementById('admin-chat-box');
-            db.ref(`support_chats/${uId}`).on('value', (snapshot) => {
-                cb.innerHTML = '';
-                snapshot.forEach((child) => {
-                    let msg = child.val();
-                    let isU = msg.sender === 'user';
-                    cb.innerHTML += `<div style="display:flex; flex-direction:column; align-items:${isU?'flex-start':'flex-end'}"><div class="chat-msg ${isU?'chat-user':'chat-admin'}">${msg.text}</div></div>`;
-                });
-                cb.scrollTop = cb.scrollHeight;
-            });
-        }
-        function closeChatModal() { document.getElementById('chat-modal').classList.add('hidden'); activeChatUserId = null; }
-        function sendAdminReply() {
-            let txt = document.getElementById('admin-reply-input').value.trim();
-            if(!txt || !activeChatUserId) return;
-            db.ref(`support_chats/${activeChatUserId}`).push({ sender: 'admin', text: txt, userRead: false, timestamp: Date.now() });
-            document.getElementById('admin-reply-input').value = '';
-        }
+        function sendAdminReply(uid) {
+            const replyText = document.getElementById('adminReply_' + uid).value;
+            if(!replyText) return;
 
-        function toggleShowMore(t) {
-            if(t==='deposit') { showAllDeposits=!showAllDeposits; loadAllDeposits(); }
-            if(t==='withdraw') { showAllWithdraws=!showAllWithdraws; loadAllWithdrawals(); }
-            if(t==='chat') { showAllChats=!showAllChats; loadSupportChatsList(); }
+            db.ref('chats/' + uid).push({
+                sender: 'admin',
+                message: replyText,
+                seen: false,
+                timestamp: Date.now()
+            }).then(() => {
+                alert("Reply sent to user!");
+                switchAdminTab('chats');
+            });
         }
     </script>
 </body>
